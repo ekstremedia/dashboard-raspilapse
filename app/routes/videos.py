@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, jsonify, current_app, send_from_directory
-from app.services.video_service import get_video_list
+from app.services.video_service import get_video_list, get_image_list
 
 bp = Blueprint("videos", __name__)
 
@@ -12,10 +12,11 @@ def index():
 
 @bp.route("/api/list")
 def api_list():
-    """Get list of available videos"""
+    """Get list of available videos and images"""
     videos_dir = current_app.config["VIDEOS_DIR"]
     videos = get_video_list(videos_dir)
-    return jsonify({"videos": videos})
+    images = get_image_list(videos_dir)
+    return jsonify({"videos": videos, "images": images})
 
 
 @bp.route("/view/<path:filepath>")

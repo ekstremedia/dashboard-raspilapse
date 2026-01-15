@@ -46,6 +46,56 @@ def get_video_list(videos_dir):
     return videos
 
 
+def get_image_list(videos_dir):
+    """Get list of keograms and slitscans organized by date"""
+    images = []
+
+    try:
+        for root, dirs, files in os.walk(videos_dir):
+            for filename in files:
+                if not filename.endswith((".jpg", ".jpeg", ".png")):
+                    continue
+
+                filepath = os.path.join(root, filename)
+                rel_path = os.path.relpath(filepath, videos_dir)
+
+                # Determine image type from filename
+                if "keogram" in filename.lower():
+                    image_type = "keogram"
+                elif "slitscan" in filename.lower():
+                    image_type = "slitscan"
+                else:
+                    image_type = "image"
+
+                try:
+                    stat = os.stat(filepath)
+                    size_kb = stat.st_size / 1024
+
+                    images.append(
+                        {
+                            "filename": filename,
+                            "path": rel_path,
+                            "type": image_type,
+                            "size_kb": round(size_kb, 1),
+                            "size_bytes": stat.st_size,
+                            "modified": datetime.fromtimestamp(
+                                stat.st_mtime
+                            ).isoformat(),
+                            "url": f"/videos/file/{rel_path}",
+                        }
+                    )
+                except OSError:
+                    pass
+
+    except OSError:
+        pass
+
+    # Sort by modified date, newest first
+    images.sort(key=lambda x: x["modified"], reverse=True)
+
+    return images
+
+
 def get_video_info(videos_dir, rel_path):
     """Get info for a specific video"""
     filepath = os.path.join(videos_dir, rel_path)
