@@ -6,16 +6,6 @@
 <div class="max-w-6xl mx-auto">
     <!-- Latest image -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
-            <div>
-                <h2 class="font-semibold text-gray-800">Latest Capture</h2>
-                <p class="text-sm text-gray-500" id="lastCapture">Loading...</p>
-            </div>
-            <div class="flex items-center space-x-2">
-                <span class="text-sm text-gray-500">Auto-refresh:</span>
-                <span id="countdown" class="text-sm font-mono bg-gray-200 px-2 py-1 rounded">30s</span>
-            </div>
-        </div>
         <div class="relative bg-black">
             <img
                 id="statusImage"
@@ -24,6 +14,16 @@
                 class="w-full h-auto"
                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1920 1080%22><rect fill=%22%23374151%22 width=%221920%22 height=%221080%22/><text x=%22960%22 y=%22540%22 fill=%22%239CA3AF%22 text-anchor=%22middle%22 font-size=%2248%22>No image available</text></svg>'"
             >
+        </div>
+        <div class="p-4 bg-gray-50 border-t flex justify-between items-center">
+            <div>
+                <h2 class="font-semibold text-gray-800">Latest Capture</h2>
+                <p class="text-sm text-gray-500" id="lastCapture">Loading...</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">Auto-refresh:</span>
+                <span id="countdown" class="text-sm font-mono bg-gray-200 px-2 py-1 rounded">30s</span>
+            </div>
         </div>
     </div>
 
