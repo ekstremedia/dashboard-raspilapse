@@ -10,6 +10,11 @@ from app.services.system_service import (
     get_uptime,
     get_system_metrics,
     get_quick_stats,
+    get_system_info,
+    get_pi_model,
+    get_os_info,
+    get_kernel_version,
+    get_hostname,
 )
 
 
@@ -94,3 +99,51 @@ def test_get_quick_stats():
     assert "disk_percent" in stats
     assert "memory_percent" in stats
     assert "images_today" in stats
+
+
+def test_get_pi_model():
+    """Test getting Raspberry Pi model."""
+    with patch("builtins.open", mock_open(read_data="Raspberry Pi 4 Model B\x00")):
+        model = get_pi_model()
+        assert model == "Raspberry Pi 4 Model B"
+
+
+def test_get_os_info():
+    """Test getting OS information."""
+    mock_os_release = """PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+ID=debian
+"""
+    with patch("builtins.open", mock_open(read_data=mock_os_release)):
+        os_info = get_os_info()
+        assert os_info is not None
+        assert os_info["name"] == "Debian GNU/Linux 12 (bookworm)"
+        assert os_info["id"] == "debian"
+
+
+def test_get_kernel_version():
+    """Test getting kernel version."""
+    mock_version = "Linux version 6.1.0-rpi8 (debian-kernel@lists.debian.org)"
+    with patch("builtins.open", mock_open(read_data=mock_version)):
+        kernel = get_kernel_version()
+        assert kernel == "6.1.0-rpi8"
+
+
+def test_get_hostname():
+    """Test getting hostname."""
+    with patch("socket.gethostname", return_value="raspberrypi"):
+        hostname = get_hostname()
+        assert hostname == "raspberrypi"
+
+
+def test_get_system_info():
+    """Test getting all system info."""
+    info = get_system_info()
+    assert info is not None
+    assert "pi_model" in info
+    assert "os" in info
+    assert "kernel" in info
+    assert "hostname" in info
+    assert "ip_addresses" in info

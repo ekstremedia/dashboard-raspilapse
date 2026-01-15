@@ -9,6 +9,43 @@
         <p class="text-gray-600">Monitor system resources and service status</p>
     </div>
 
+    <!-- System Information -->
+    <div class="bg-white rounded-lg shadow mb-6 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">System Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            {% if system_info.pi_model %}
+            <div>
+                <span class="text-gray-500">Model:</span>
+                <span class="font-medium text-gray-800 ml-2">{{ system_info.pi_model }}</span>
+            </div>
+            {% endif %}
+            {% if system_info.hostname %}
+            <div>
+                <span class="text-gray-500">Hostname:</span>
+                <span class="font-medium text-gray-800 ml-2">{{ system_info.hostname }}</span>
+            </div>
+            {% endif %}
+            {% if system_info.os %}
+            <div>
+                <span class="text-gray-500">OS:</span>
+                <span class="font-medium text-gray-800 ml-2">{{ system_info.os.name }}</span>
+            </div>
+            {% endif %}
+            {% if system_info.kernel %}
+            <div>
+                <span class="text-gray-500">Kernel:</span>
+                <span class="font-medium text-gray-800 ml-2">{{ system_info.kernel }}</span>
+            </div>
+            {% endif %}
+            {% if system_info.ip_addresses %}
+            <div class="md:col-span-2">
+                <span class="text-gray-500">IP Address{% if system_info.ip_addresses|length > 1 %}es{% endif %}:</span>
+                <span class="font-medium text-gray-800 ml-2">{{ system_info.ip_addresses | join(', ') }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Service status -->
     <div class="bg-white rounded-lg shadow mb-6 p-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Service Status</h2>

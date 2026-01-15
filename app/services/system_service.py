@@ -1,4 +1,5 @@
 import os
+import socket
 import subprocess
 from datetime import datetime
 
@@ -120,6 +121,81 @@ def count_images_today(images_dir):
         return 0
     except OSError:
         return 0
+
+
+def get_pi_model():
+    """Get Raspberry Pi model"""
+    try:
+        with open("/proc/device-tree/model", "r") as f:
+            return f.read().strip().rstrip("\x00")
+    except IOError:
+        return None
+
+
+def get_os_info():
+    """Get OS information"""
+    info = {}
+    try:
+        with open("/etc/os-release", "r") as f:
+            for line in f:
+                if "=" in line:
+                    key, value = line.strip().split("=", 1)
+                    info[key] = value.strip('"')
+        return {
+            "name": info.get("PRETTY_NAME", "Unknown"),
+            "version": info.get("VERSION", ""),
+            "id": info.get("ID", ""),
+        }
+    except IOError:
+        return None
+
+
+def get_kernel_version():
+    """Get kernel version"""
+    try:
+        with open("/proc/version", "r") as f:
+            version_str = f.read().strip()
+            # Extract just the version number
+            parts = version_str.split()
+            if len(parts) >= 3:
+                return parts[2]
+            return version_str
+    except IOError:
+        return None
+
+
+def get_hostname():
+    """Get system hostname"""
+    try:
+        return socket.gethostname()
+    except Exception:
+        return None
+
+
+def get_ip_addresses():
+    """Get IP addresses"""
+    ips = []
+    try:
+        # Get all network interfaces
+        result = subprocess.run(
+            ["hostname", "-I"], capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            ips = result.stdout.strip().split()
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError):
+        pass
+    return ips
+
+
+def get_system_info():
+    """Get static system information"""
+    return {
+        "pi_model": get_pi_model(),
+        "os": get_os_info(),
+        "kernel": get_kernel_version(),
+        "hostname": get_hostname(),
+        "ip_addresses": get_ip_addresses(),
+    }
 
 
 def get_system_metrics():

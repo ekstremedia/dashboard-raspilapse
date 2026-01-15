@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, jsonify
-from app.services.system_service import get_system_metrics
+from app.services.system_service import get_system_metrics, get_system_info
 
 bp = Blueprint("system", __name__)
 
@@ -7,7 +7,8 @@ bp = Blueprint("system", __name__)
 @bp.route("/")
 def index():
     """System status page"""
-    return render_template("system.html")
+    system_info = get_system_info()
+    return render_template("system.html", system_info=system_info)
 
 
 @bp.route("/api/metrics")
