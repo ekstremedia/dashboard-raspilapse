@@ -18,6 +18,7 @@ def create_app(config_name="production"):
     from app.routes.videos import bp as videos_bp
     from app.routes.system import bp as system_bp
     from app.routes.logs import bp as logs_bp
+    from app.routes.graphs import bp as graphs_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(config_bp, url_prefix="/config")
@@ -26,5 +27,6 @@ def create_app(config_name="production"):
     app.register_blueprint(videos_bp, url_prefix="/videos")
     app.register_blueprint(system_bp, url_prefix="/system")
     app.register_blueprint(logs_bp, url_prefix="/logs")
+    app.register_blueprint(graphs_bp, url_prefix="/graphs")
 
     return app

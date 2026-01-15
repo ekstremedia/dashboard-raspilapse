@@ -63,6 +63,12 @@
                     </svg>
                     Logs
                 </a>
+                <a href="/graphs" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path.startswith('/graphs') %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                    </svg>
+                    Graphs
+                </a>
             </nav>
         </aside>
 
@@ -86,6 +92,7 @@
                 <a href="/videos" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Videos</a>
                 <a href="/system" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">System</a>
                 <a href="/logs" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Logs</a>
+                <a href="/graphs" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Graphs</a>
             </nav>
         </div>
 
