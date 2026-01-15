@@ -11,7 +11,7 @@ def get_video_list(videos_dir):
         # Walk through year/month structure
         for root, dirs, files in os.walk(videos_dir):
             for filename in files:
-                if not filename.endswith(('.mp4', '.mkv', '.avi', '.webm')):
+                if not filename.endswith((".mp4", ".mkv", ".avi", ".webm")):
                     continue
 
                 filepath = os.path.join(root, filename)
@@ -21,15 +21,19 @@ def get_video_list(videos_dir):
                     stat = os.stat(filepath)
                     size_mb = stat.st_size / (1024 * 1024)
 
-                    videos.append({
-                        'filename': filename,
-                        'path': rel_path,
-                        'size_mb': round(size_mb, 1),
-                        'size_bytes': stat.st_size,
-                        'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                        'url': f"/videos/file/{rel_path}",
-                        'view_url': f"/videos/view/{rel_path}"
-                    })
+                    videos.append(
+                        {
+                            "filename": filename,
+                            "path": rel_path,
+                            "size_mb": round(size_mb, 1),
+                            "size_bytes": stat.st_size,
+                            "modified": datetime.fromtimestamp(
+                                stat.st_mtime
+                            ).isoformat(),
+                            "url": f"/videos/file/{rel_path}",
+                            "view_url": f"/videos/view/{rel_path}",
+                        }
+                    )
                 except OSError:
                     pass
 
@@ -37,7 +41,7 @@ def get_video_list(videos_dir):
         pass
 
     # Sort by modified date, newest first
-    videos.sort(key=lambda x: x['modified'], reverse=True)
+    videos.sort(key=lambda x: x["modified"], reverse=True)
 
     return videos
 
@@ -56,11 +60,11 @@ def get_video_info(videos_dir, rel_path):
     try:
         stat = os.stat(filepath)
         return {
-            'filename': os.path.basename(rel_path),
-            'path': rel_path,
-            'size_mb': round(stat.st_size / (1024 * 1024), 1),
-            'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
-            'url': f"/videos/file/{rel_path}"
+            "filename": os.path.basename(rel_path),
+            "path": rel_path,
+            "size_mb": round(stat.st_size / (1024 * 1024), 1),
+            "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            "url": f"/videos/file/{rel_path}",
         }
     except OSError:
         return None

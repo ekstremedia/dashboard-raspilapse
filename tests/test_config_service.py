@@ -1,4 +1,5 @@
 """Test config service."""
+
 import pytest
 import os
 import tempfile
@@ -16,12 +17,12 @@ def test_load_config(temp_config_file):
     content, error = load_config(temp_config_file)
     assert error is None
     assert content is not None
-    assert 'camera' in content
+    assert "camera" in content
 
 
 def test_load_config_not_found():
     """Test loading a non-existent config file."""
-    content, error = load_config('/nonexistent/path.yml')
+    content, error = load_config("/nonexistent/path.yml")
     assert content is None
     assert error is not None
 
@@ -49,7 +50,7 @@ location:
 """
     valid, errors = validate_yaml(incomplete_yaml)
     assert valid is False
-    assert any('camera' in e for e in errors)
+    assert any("camera" in e for e in errors)
 
 
 def test_save_config(temp_config_file):
@@ -69,9 +70,9 @@ timelapse:
     assert error is None
 
     # Verify content was saved
-    with open(temp_config_file, 'r') as f:
+    with open(temp_config_file, "r") as f:
         saved_content = f.read()
-    assert '3840' in saved_content
+    assert "3840" in saved_content
 
 
 def test_backup_config(temp_config_file):
@@ -90,7 +91,7 @@ def test_get_backups(temp_config_file):
 
     backups = get_backups(temp_config_file)
     assert len(backups) >= 1
-    assert '.backup.' in backups[0]['filename']
+    assert ".backup." in backups[0]["filename"]
 
     # Clean up
     os.unlink(backup_path)

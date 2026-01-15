@@ -26,18 +26,19 @@ def get_available_dates(images_dir):
 
                     # Count images in this directory
                     try:
-                        image_count = len([
-                            f for f in os.listdir(day_path)
-                            if f.endswith('.jpg')
-                        ])
+                        image_count = len(
+                            [f for f in os.listdir(day_path) if f.endswith(".jpg")]
+                        )
                         if image_count > 0:
-                            dates.append({
-                                'year': int(year_dir),
-                                'month': int(month_dir),
-                                'day': int(day_dir),
-                                'date': f"{year_dir}-{month_dir}-{day_dir}",
-                                'count': image_count
-                            })
+                            dates.append(
+                                {
+                                    "year": int(year_dir),
+                                    "month": int(month_dir),
+                                    "day": int(day_dir),
+                                    "date": f"{year_dir}-{month_dir}-{day_dir}",
+                                    "count": image_count,
+                                }
+                            )
                     except OSError:
                         pass
 
@@ -49,18 +50,13 @@ def get_available_dates(images_dir):
 
 def get_images_for_date(images_dir, year, month, day):
     """Get list of images for a specific date"""
-    day_path = os.path.join(
-        images_dir,
-        str(year),
-        f"{month:02d}",
-        f"{day:02d}"
-    )
+    day_path = os.path.join(images_dir, str(year), f"{month:02d}", f"{day:02d}")
 
     images = []
 
     try:
         for filename in sorted(os.listdir(day_path)):
-            if not filename.endswith('.jpg'):
+            if not filename.endswith(".jpg"):
                 continue
 
             filepath = os.path.join(day_path, filename)
@@ -72,20 +68,22 @@ def get_images_for_date(images_dir, year, month, day):
                 # Extract time from filename if possible
                 # Format: kringelen_nord_YYYY_MM_DD_HH_MM_SS.jpg
                 time_str = None
-                parts = filename.replace('.jpg', '').split('_')
+                parts = filename.replace(".jpg", "").split("_")
                 if len(parts) >= 6:
                     try:
                         time_str = f"{parts[-3]}:{parts[-2]}:{parts[-1]}"
                     except (IndexError, ValueError):
                         pass
 
-                images.append({
-                    'filename': filename,
-                    'path': rel_path,
-                    'size': stat.st_size,
-                    'time': time_str,
-                    'url': f"/gallery/image/{rel_path}"
-                })
+                images.append(
+                    {
+                        "filename": filename,
+                        "path": rel_path,
+                        "size": stat.st_size,
+                        "time": time_str,
+                        "url": f"/gallery/image/{rel_path}",
+                    }
+                )
             except OSError:
                 pass
 
@@ -103,9 +101,9 @@ def get_images_for_date_paginated(images_dir, year, month, day, page=1, per_page
     end = start + per_page
 
     return {
-        'images': all_images[start:end],
-        'total': len(all_images),
-        'page': page,
-        'per_page': per_page,
-        'pages': (len(all_images) + per_page - 1) // per_page
+        "images": all_images[start:end],
+        "total": len(all_images),
+        "page": page,
+        "per_page": per_page,
+        "pages": (len(all_images) + per_page - 1) // per_page,
     }

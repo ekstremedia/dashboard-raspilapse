@@ -1,14 +1,14 @@
 from flask import Flask
 
 
-def create_app(config_name='production'):
+def create_app(config_name="production"):
     app = Flask(__name__)
 
     # Load configuration
-    if config_name == 'development':
-        app.config.from_object('app.config.DevelopmentConfig')
+    if config_name == "development":
+        app.config.from_object("app.config.DevelopmentConfig")
     else:
-        app.config.from_object('app.config.ProductionConfig')
+        app.config.from_object("app.config.ProductionConfig")
 
     # Register blueprints
     from app.routes.dashboard import bp as dashboard_bp
@@ -20,11 +20,11 @@ def create_app(config_name='production'):
     from app.routes.logs import bp as logs_bp
 
     app.register_blueprint(dashboard_bp)
-    app.register_blueprint(config_bp, url_prefix='/config')
-    app.register_blueprint(timelapse_bp, url_prefix='/timelapse')
-    app.register_blueprint(gallery_bp, url_prefix='/gallery')
-    app.register_blueprint(videos_bp, url_prefix='/videos')
-    app.register_blueprint(system_bp, url_prefix='/system')
-    app.register_blueprint(logs_bp, url_prefix='/logs')
+    app.register_blueprint(config_bp, url_prefix="/config")
+    app.register_blueprint(timelapse_bp, url_prefix="/timelapse")
+    app.register_blueprint(gallery_bp, url_prefix="/gallery")
+    app.register_blueprint(videos_bp, url_prefix="/videos")
+    app.register_blueprint(system_bp, url_prefix="/system")
+    app.register_blueprint(logs_bp, url_prefix="/logs")
 
     return app

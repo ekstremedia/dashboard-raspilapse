@@ -9,7 +9,7 @@ import glob
 def load_config(config_path):
     """Load config file content"""
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             return f.read(), None
     except IOError as e:
         return None, str(e)
@@ -29,32 +29,32 @@ def validate_yaml(content):
         return False, ["Config must be a YAML dictionary"]
 
     # Check required sections exist
-    required_sections = ['camera', 'output', 'timelapse']
+    required_sections = ["camera", "output", "timelapse"]
     for section in required_sections:
         if section not in config:
             errors.append(f"Missing required section: {section}")
 
     # Validate camera settings
-    if 'camera' in config:
-        camera = config['camera']
-        if 'resolution' in camera:
-            res = camera['resolution']
+    if "camera" in config:
+        camera = config["camera"]
+        if "resolution" in camera:
+            res = camera["resolution"]
             if not isinstance(res, list) or len(res) != 2:
                 errors.append("camera.resolution must be a list of [width, height]")
 
     # Validate output settings
-    if 'output' in config:
-        output = config['output']
-        if 'jpeg_quality' in output:
-            quality = output['jpeg_quality']
+    if "output" in config:
+        output = config["output"]
+        if "jpeg_quality" in output:
+            quality = output["jpeg_quality"]
             if not isinstance(quality, int) or quality < 1 or quality > 100:
                 errors.append("output.jpeg_quality must be between 1 and 100")
 
     # Validate video settings
-    if 'video' in config:
-        video = config['video']
-        if 'fps' in video:
-            fps = video['fps']
+    if "video" in config:
+        video = config["video"]
+        if "fps" in video:
+            fps = video["fps"]
             if not isinstance(fps, (int, float)) or fps <= 0:
                 errors.append("video.fps must be a positive number")
 
@@ -63,7 +63,7 @@ def validate_yaml(content):
 
 def backup_config(config_path):
     """Create a backup of the config file"""
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_dir = os.path.dirname(config_path)
     backup_name = f"{os.path.basename(config_path)}.backup.{timestamp}"
     backup_path = os.path.join(backup_dir, backup_name)
@@ -96,8 +96,8 @@ def save_config(config_path, content):
             backup_config(config_path)
 
         # Write to temp file first (atomic write)
-        temp_path = config_path + '.tmp'
-        with open(temp_path, 'w') as f:
+        temp_path = config_path + ".tmp"
+        with open(temp_path, "w") as f:
             f.write(content)
 
         # Atomic rename
@@ -116,12 +116,14 @@ def get_backups(config_path):
     for backup_path in sorted(glob.glob(backup_pattern), reverse=True):
         try:
             stat = os.stat(backup_path)
-            backups.append({
-                'filename': os.path.basename(backup_path),
-                'path': backup_path,
-                'size': stat.st_size,
-                'modified': datetime.fromtimestamp(stat.st_mtime).isoformat()
-            })
+            backups.append(
+                {
+                    "filename": os.path.basename(backup_path),
+                    "path": backup_path,
+                    "size": stat.st_size,
+                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                }
+            )
         except OSError:
             pass
 
@@ -141,7 +143,7 @@ def restore_backup(config_path, backup_filename):
     if not os.path.exists(backup_path):
         return False, "Backup file not found"
 
-    if not backup_filename.startswith(os.path.basename(config_path) + '.backup.'):
+    if not backup_filename.startswith(os.path.basename(config_path) + ".backup."):
         return False, "Invalid backup filename"
 
     try:

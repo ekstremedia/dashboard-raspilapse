@@ -1,11 +1,13 @@
 """Pytest configuration and fixtures."""
+
 import pytest
 import tempfile
 import os
 
 # Add app to path
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app import create_app
 
@@ -13,12 +15,12 @@ from app import create_app
 @pytest.fixture
 def app():
     """Create application for testing."""
-    app = create_app('development')
-    app.config['TESTING'] = True
+    app = create_app("development")
+    app.config["TESTING"] = True
 
     # Use temp directories for testing
-    app.config['RASPILAPSE_CONFIG'] = tempfile.mktemp(suffix='.yml')
-    app.config['JOB_STATUS_FILE'] = tempfile.mktemp(suffix='.json')
+    app.config["RASPILAPSE_CONFIG"] = tempfile.mktemp(suffix=".yml")
+    app.config["JOB_STATUS_FILE"] = tempfile.mktemp(suffix=".json")
 
     yield app
 
@@ -48,8 +50,8 @@ timelapse:
 @pytest.fixture
 def temp_config_file(sample_config):
     """Create a temporary config file."""
-    fd, path = tempfile.mkstemp(suffix='.yml')
-    with os.fdopen(fd, 'w') as f:
+    fd, path = tempfile.mkstemp(suffix=".yml")
+    with os.fdopen(fd, "w") as f:
         f.write(sample_config)
     yield path
     os.unlink(path)
