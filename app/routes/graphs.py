@@ -36,9 +36,9 @@ def api_generate():
     time_range = data.get("time_range", "-24h")
 
     # Validate time range
-    valid_ranges = ["-1h", "-6h", "-12h", "-24h", "-7d", "-30d", "--all"]
+    valid_ranges = ["1h", "6h", "12h", "24h", "7d", "30d", "--all"]
     if time_range not in valid_ranges:
-        time_range = "-24h"
+        time_range = "24h"
 
     success, output = run_graphs_generator(time_range)
 

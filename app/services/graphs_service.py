@@ -37,7 +37,7 @@ def list_graphs() -> List[Dict]:
     return graphs
 
 
-def run_graphs_generator(time_range: str = "-24h") -> Tuple[bool, str]:
+def run_graphs_generator(time_range: str = "24h") -> Tuple[bool, str]:
     """Run the db_graphs.py script to generate graphs."""
     script_path = Path("/home/pi/raspilapse/scripts/db_graphs.py")
 
@@ -47,8 +47,10 @@ def run_graphs_generator(time_range: str = "-24h") -> Tuple[bool, str]:
     # Build command
     cmd = ["/usr/bin/python3", str(script_path)]
 
-    # Add time range argument
-    if time_range and time_range != "-24h":
+    # Add time range argument (positional, no dash prefix)
+    if time_range == "--all":
+        cmd.append("--all")
+    elif time_range and time_range != "24h":
         cmd.append(time_range)
 
     try:
