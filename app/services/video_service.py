@@ -30,7 +30,7 @@ def get_video_list(videos_dir):
                             "modified": datetime.fromtimestamp(
                                 stat.st_mtime
                             ).isoformat(),
-                            "url": f"/videos/file/{rel_path}",
+                            "url": f"/videos/{rel_path}",
                             "view_url": f"/videos/view/{rel_path}",
                         }
                     )
@@ -81,7 +81,7 @@ def get_image_list(videos_dir):
                             "modified": datetime.fromtimestamp(
                                 stat.st_mtime
                             ).isoformat(),
-                            "url": f"/videos/file/{rel_path}",
+                            "url": f"/videos/{rel_path}",
                         }
                     )
                 except OSError:
@@ -114,7 +114,7 @@ def get_video_info(videos_dir, rel_path):
             "path": rel_path,
             "size_mb": round(stat.st_size / (1024 * 1024), 1),
             "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-            "url": f"/videos/file/{rel_path}",
+            "url": f"/videos/{rel_path}",
         }
     except OSError:
         return None
