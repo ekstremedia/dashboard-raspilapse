@@ -208,7 +208,17 @@ function showJobStatus(status) {
     } else if (status.status === 'completed') {
         statusDiv.classList.add('bg-green-100');
         statusText.textContent = 'Completed!';
-        statusDetail.textContent = `Finished: ${status.finished}`;
+
+        // Build detail with links
+        let detail = `Finished: ${status.finished}`;
+        if (status.video_url) {
+            detail += ` | <a href="${status.video_url}" target="_blank" class="text-blue-600 hover:underline font-medium">Watch Video</a>`;
+        }
+        if (status.slitscan_url) {
+            detail += ` | <a href="${status.slitscan_url}" target="_blank" class="text-blue-600 hover:underline font-medium">View Slitscan</a>`;
+        }
+        statusDetail.innerHTML = detail;
+
         cancelBtn.classList.add('hidden');
         generateBtn.disabled = false;
 

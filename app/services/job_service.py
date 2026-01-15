@@ -102,6 +102,10 @@ def get_job_status(job_status_file):
     if status.get("status") in ("completed", "cancelled"):
         log_file = status.get("log_file", "/tmp/raspilapse-job.log")
         status["output"] = read_recent_output(log_file, lines=50)
+        # Extract output file URLs for completed jobs
+        if status.get("status") == "completed":
+            output_files = extract_output_files(log_file)
+            status.update(output_files)
         return status
 
     # Check if process still running
@@ -127,6 +131,10 @@ def get_job_status(job_status_file):
             log_file = status.get("log_file", "/tmp/raspilapse-job.log")
             status["output"] = read_recent_output(log_file, lines=50)
 
+            # Extract output file URLs
+            output_files = extract_output_files(log_file)
+            status.update(output_files)
+
             # Update status file
             Path(job_status_file).write_text(json.dumps(status, indent=2))
             return status
@@ -142,6 +150,39 @@ def read_recent_output(log_file, lines=20):
             return "".join(all_lines[-lines:])
     except IOError:
         return ""
+
+
+def extract_output_files(log_file):
+    """Extract video and slitscan paths from log file"""
+    import re
+
+    result = {"video_url": None, "slitscan_url": None}
+
+    try:
+        with open(log_file, "r") as f:
+            content = f.read()
+
+        # Look for video path in log output
+        video_match = re.search(
+            r"Video created.*?(/var/www/html/videos/[^\s\x1b]+\.mp4)", content
+        )
+        if video_match:
+            video_path = video_match.group(1)
+            # Convert to URL path
+            result["video_url"] = video_path.replace("/var/www/html", "")
+
+        # Look for slitscan path
+        slitscan_match = re.search(
+            r"Slitscan saved.*?(/var/www/html/videos/[^\s\x1b]+\.jpg)", content
+        )
+        if slitscan_match:
+            slitscan_path = slitscan_match.group(1)
+            result["slitscan_url"] = slitscan_path.replace("/var/www/html", "")
+
+    except IOError:
+        pass
+
+    return result
 
 
 def cancel_job(job_status_file):

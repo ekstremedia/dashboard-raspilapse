@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock
 from app.services.job_service import (
     can_start_job,
     get_job_status,
+    extract_output_files,
 )
 
 
@@ -95,3 +96,36 @@ def test_get_job_status_completed():
         assert status["status"] == "completed"
     finally:
         os.unlink(job_file)
+
+
+def test_extract_output_files():
+    """Test extracting video and slitscan URLs from log file."""
+    log_content = """
+Video created: /var/www/html/videos/2026/01/test_video.mp4 (5.37 MB)
+Slitscan saved: /var/www/html/videos/2026/01/slitscan_test.jpg
+"""
+    with tempfile.NamedTemporaryFile(suffix=".log", delete=False, mode="w") as f:
+        f.write(log_content)
+        log_file = f.name
+
+    try:
+        result = extract_output_files(log_file)
+        assert result["video_url"] == "/videos/2026/01/test_video.mp4"
+        assert result["slitscan_url"] == "/videos/2026/01/slitscan_test.jpg"
+    finally:
+        os.unlink(log_file)
+
+
+def test_extract_output_files_no_matches():
+    """Test extract_output_files when no video/slitscan in log."""
+    log_content = "Some random log output without video paths"
+    with tempfile.NamedTemporaryFile(suffix=".log", delete=False, mode="w") as f:
+        f.write(log_content)
+        log_file = f.name
+
+    try:
+        result = extract_output_files(log_file)
+        assert result["video_url"] is None
+        assert result["slitscan_url"] is None
+    finally:
+        os.unlink(log_file)
