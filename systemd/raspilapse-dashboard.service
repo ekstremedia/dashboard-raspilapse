@@ -1,0 +1,24 @@
+[Unit]
+Description=Raspilapse Dashboard Web Interface
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=www-data
+WorkingDirectory=/home/pi/dashboard-raspilapse
+Environment="FLASK_ENV=production"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/home/pi/dashboard-raspilapse/venv/bin/gunicorn \
+    --workers 2 \
+    --threads 2 \
+    --bind 127.0.0.1:5000 \
+    --timeout 120 \
+    --access-logfile /home/pi/dashboard-raspilapse/logs/access.log \
+    --error-logfile /home/pi/dashboard-raspilapse/logs/error.log \
+    wsgi:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

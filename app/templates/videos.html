@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Video Library - Raspilapse{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Video Library</h1>
+        <p class="text-gray-600">Browse generated timelapse videos</p>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loadingState" class="text-center py-12">
+        <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-2 text-gray-500">Loading videos...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="hidden text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+        </svg>
+        <p class="mt-2 text-gray-500">No videos found</p>
+        <a href="/timelapse" class="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+            Generate Timelapse
+        </a>
+    </div>
+
+    <!-- Video list -->
+    <div id="videoList" class="hidden space-y-4">
+        <!-- Filled by JS -->
+    </div>
+</div>
+
+<!-- Video modal -->
+<div id="videoModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    <button id="modalClose" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </button>
+    <video id="modalVideo" class="max-h-screen max-w-full" controls></video>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadVideos() {
+    fetch('/videos/api/list')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('loadingState').classList.add('hidden');
+
+            if (data.videos.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            }
+
+            const list = document.getElementById('videoList');
+            list.innerHTML = data.videos.map(video => `
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-gray-800 truncate">${video.filename}</h3>
+                            <p class="text-sm text-gray-500">
+                                ${video.size_mb} MB
+                                <span class="mx-2">|</span>
+                                ${new Date(video.modified).toLocaleString()}
+                            </p>
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button onclick="playVideo('${video.url}')"
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+                                Play
+                            </button>
+                            <a href="${video.url}" download
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">
+                                Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            list.classList.remove('hidden');
+        })
+        .catch(err => {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+        });
+}
+
+function playVideo(url) {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    video.src = url;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    video.play();
+}
+
+function closeModal() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    video.pause();
+    video.src = '';
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('videoModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+
+loadVideos();
+</script>
+{% endblock %}

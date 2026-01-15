@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Log Viewer - Raspilapse{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Log Viewer</h1>
+            <p class="text-gray-600">View raspilapse log files</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <label class="text-sm text-gray-600">Log file:</label>
+            <select id="logSelect" class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Select a log file...</option>
+            </select>
+            <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Auto refresh toggle -->
+    <div class="mb-4 flex items-center">
+        <label class="flex items-center">
+            <input type="checkbox" id="autoRefresh"
+                class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-2">
+            <span class="text-sm text-gray-600">Auto-refresh every 5 seconds</span>
+        </label>
+        <span class="ml-4 text-sm text-gray-500">
+            Lines:
+            <select id="linesSelect" class="border rounded px-2 py-1 text-sm">
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="200">200</option>
+                <option value="500">500</option>
+            </select>
+        </span>
+    </div>
+
+    <!-- Log content -->
+    <div class="bg-gray-900 rounded-lg overflow-hidden">
+        <div class="p-2 bg-gray-800 flex items-center justify-between">
+            <span id="logFilename" class="text-sm text-gray-400 font-mono">No file selected</span>
+            <button id="scrollBottom" class="text-xs text-gray-400 hover:text-white">
+                Scroll to bottom
+            </button>
+        </div>
+        <pre id="logContent" class="p-4 text-sm text-green-400 font-mono overflow-auto h-96 whitespace-pre-wrap">Select a log file to view...</pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let autoRefreshInterval = null;
+let currentFile = '';
+
+function loadLogFiles() {
+    fetch('/logs/api/list')
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById('logSelect');
+            select.innerHTML = '<option value="">Select a log file...</option>' +
+                data.files.map(f => `<option value="${f.filename}">${f.filename} (${f.size_kb} KB)</option>`).join('');
+
+            // Auto-select first file if available
+            if (data.files.length > 0) {
+                select.value = data.files[0].filename;
+                loadLogContent(data.files[0].filename);
+            }
+        });
+}
+
+function loadLogContent(filename) {
+    if (!filename) {
+        document.getElementById('logContent').textContent = 'Select a log file to view...';
+        document.getElementById('logFilename').textContent = 'No file selected';
+        return;
+    }
+
+    currentFile = filename;
+    const lines = document.getElementById('linesSelect').value;
+
+    fetch(`/logs/api/read/${filename}?lines=${lines}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('logContent').textContent = 'Error: ' + data.error;
+                return;
+            }
+            document.getElementById('logContent').textContent = data.content || '(empty)';
+            document.getElementById('logFilename').textContent = filename;
+
+            // Auto-scroll to bottom
+            const pre = document.getElementById('logContent');
+            pre.scrollTop = pre.scrollHeight;
+        })
+        .catch(err => {
+            document.getElementById('logContent').textContent = 'Error loading log: ' + err;
+        });
+}
+
+function toggleAutoRefresh(enabled) {
+    if (enabled && currentFile) {
+        autoRefreshInterval = setInterval(() => loadLogContent(currentFile), 5000);
+    } else if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+// Event listeners
+document.getElementById('logSelect').addEventListener('change', function() {
+    loadLogContent(this.value);
+});
+
+document.getElementById('refreshBtn').addEventListener('click', function() {
+    if (currentFile) loadLogContent(currentFile);
+});
+
+document.getElementById('autoRefresh').addEventListener('change', function() {
+    toggleAutoRefresh(this.checked);
+});
+
+document.getElementById('linesSelect').addEventListener('change', function() {
+    if (currentFile) loadLogContent(currentFile);
+});
+
+document.getElementById('scrollBottom').addEventListener('click', function() {
+    const pre = document.getElementById('logContent');
+    pre.scrollTop = pre.scrollHeight;
+});
+
+// Initial load
+loadLogFiles();
+</script>
+{% endblock %}

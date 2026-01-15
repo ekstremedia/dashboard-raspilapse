@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Timelapse Generator - Raspilapse{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Timelapse Generator</h1>
+        <p class="text-gray-600">Generate timelapse videos from captured images</p>
+    </div>
+
+    <!-- Job status banner -->
+    <div id="jobStatus" class="hidden mb-6 rounded-lg p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <span id="jobStatusText" class="font-semibold"></span>
+                <span id="jobStatusDetail" class="text-sm ml-2"></span>
+            </div>
+            <button id="cancelBtn" class="hidden bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition-colors">
+                Cancel
+            </button>
+        </div>
+        <pre id="jobOutput" class="mt-4 bg-black text-green-400 p-4 rounded text-sm overflow-auto max-h-48 hidden font-mono"></pre>
+    </div>
+
+    <!-- Generator form -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <form id="timelapseForm">
+                <!-- Time settings -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Time Range</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                            <input type="time" name="start_time" value="07:00"
+                                class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                            <input type="time" name="end_time" value="16:00"
+                                class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date settings -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Date</h3>
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="today" checked
+                                class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-2"
+                                onchange="toggleDateInputs(this.checked)">
+                            <span class="text-gray-700">Use today's date</span>
+                        </label>
+                    </div>
+                    <div id="dateInputs" class="grid grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                            <input type="date" name="start_date"
+                                class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                            <input type="date" name="end_date"
+                                class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Options</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" name="hd" checked
+                                class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-2">
+                            <div>
+                                <span class="text-gray-700 font-medium">HD</span>
+                                <p class="text-xs text-gray-500">1080p output</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" name="hw" checked
+                                class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-2">
+                            <div>
+                                <span class="text-gray-700 font-medium">HW Encode</span>
+                                <p class="text-xs text-gray-500">Faster encoding</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" name="slitscan" checked
+                                class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-2">
+                            <div>
+                                <span class="text-gray-700 font-medium">Slitscan</span>
+                                <p class="text-xs text-gray-500">Generate slitscan</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" name="no_keogram" checked
+                                class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-2">
+                            <div>
+                                <span class="text-gray-700 font-medium">No Keogram</span>
+                                <p class="text-xs text-gray-500">Skip keogram</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Advanced options (collapsed) -->
+                <details class="mb-6">
+                    <summary class="text-lg font-semibold text-gray-800 cursor-pointer hover:text-gray-600">
+                        Advanced Options
+                    </summary>
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">FPS (optional)</label>
+                            <input type="number" name="fps" min="1" max="60" placeholder="25"
+                                class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Limit frames (testing)</label>
+                            <input type="number" name="limit" min="0" placeholder="0 = all"
+                                class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Submit button -->
+                <div class="flex justify-end">
+                    <button type="submit" id="generateBtn"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        Generate Timelapse
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Command preview -->
+    <div class="mt-6 bg-gray-800 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-gray-400 mb-2">Command Preview</h3>
+        <code id="commandPreview" class="text-green-400 text-sm font-mono break-all">
+            python src/make_timelapse.py --start 07:00 --end 16:00 --today --hd --hw --no-keogram
+        </code>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let statusPollInterval = null;
+
+function toggleDateInputs(useToday) {
+    document.getElementById('dateInputs').classList.toggle('hidden', useToday);
+}
+
+function updateCommandPreview() {
+    const form = document.getElementById('timelapseForm');
+    const formData = new FormData(form);
+
+    let cmd = 'python src/make_timelapse.py';
+
+    if (formData.get('start_time')) cmd += ` --start ${formData.get('start_time')}`;
+    if (formData.get('end_time')) cmd += ` --end ${formData.get('end_time')}`;
+
+    if (form.querySelector('[name=today]').checked) {
+        cmd += ' --today';
+    } else {
+        if (formData.get('start_date')) cmd += ` --start-date ${formData.get('start_date')}`;
+        if (formData.get('end_date')) cmd += ` --end-date ${formData.get('end_date')}`;
+    }
+
+    if (form.querySelector('[name=hd]').checked) cmd += ' --hd';
+    if (form.querySelector('[name=hw]').checked) cmd += ' --hw';
+    if (form.querySelector('[name=slitscan]').checked) cmd += ' --slitscan';
+    if (form.querySelector('[name=no_keogram]').checked) cmd += ' --no-keogram';
+
+    if (formData.get('fps')) cmd += ` --fps ${formData.get('fps')}`;
+    if (formData.get('limit')) cmd += ` --limit ${formData.get('limit')}`;
+
+    document.getElementById('commandPreview').textContent = cmd;
+}
+
+function showJobStatus(status) {
+    const statusDiv = document.getElementById('jobStatus');
+    const statusText = document.getElementById('jobStatusText');
+    const statusDetail = document.getElementById('jobStatusDetail');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const outputPre = document.getElementById('jobOutput');
+    const generateBtn = document.getElementById('generateBtn');
+
+    statusDiv.classList.remove('hidden', 'bg-blue-100', 'bg-green-100', 'bg-red-100', 'bg-yellow-100');
+
+    if (status.status === 'running') {
+        statusDiv.classList.add('bg-blue-100');
+        statusText.textContent = 'Running...';
+        statusDetail.textContent = status.external ? status.message : `Started: ${status.started}`;
+        cancelBtn.classList.remove('hidden');
+        generateBtn.disabled = true;
+
+        if (status.output) {
+            outputPre.classList.remove('hidden');
+            outputPre.textContent = status.output;
+            outputPre.scrollTop = outputPre.scrollHeight;
+        }
+    } else if (status.status === 'completed') {
+        statusDiv.classList.add('bg-green-100');
+        statusText.textContent = 'Completed!';
+        statusDetail.textContent = `Finished: ${status.finished}`;
+        cancelBtn.classList.add('hidden');
+        generateBtn.disabled = false;
+
+        if (status.output) {
+            outputPre.classList.remove('hidden');
+            outputPre.textContent = status.output;
+        }
+
+        stopPolling();
+    } else if (status.status === 'cancelled') {
+        statusDiv.classList.add('bg-yellow-100');
+        statusText.textContent = 'Cancelled';
+        statusDetail.textContent = '';
+        cancelBtn.classList.add('hidden');
+        generateBtn.disabled = false;
+        stopPolling();
+    } else if (status.status === 'idle') {
+        statusDiv.classList.add('hidden');
+        generateBtn.disabled = false;
+        stopPolling();
+    }
+}
+
+function pollStatus() {
+    fetch('/timelapse/api/status')
+        .then(r => r.json())
+        .then(showJobStatus)
+        .catch(err => console.error('Error polling status:', err));
+}
+
+function startPolling() {
+    if (!statusPollInterval) {
+        statusPollInterval = setInterval(pollStatus, 2000);
+    }
+}
+
+function stopPolling() {
+    if (statusPollInterval) {
+        clearInterval(statusPollInterval);
+        statusPollInterval = null;
+    }
+}
+
+// Form submission
+document.getElementById('timelapseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = {
+        start_time: formData.get('start_time'),
+        end_time: formData.get('end_time'),
+        today: this.querySelector('[name=today]').checked,
+        start_date: formData.get('start_date'),
+        end_date: formData.get('end_date'),
+        hd: this.querySelector('[name=hd]').checked,
+        hw: this.querySelector('[name=hw]').checked,
+        slitscan: this.querySelector('[name=slitscan]').checked,
+        no_keogram: this.querySelector('[name=no_keogram]').checked,
+        fps: formData.get('fps') || null,
+        limit: formData.get('limit') || null
+    };
+
+    document.getElementById('generateBtn').disabled = true;
+
+    fetch('/timelapse/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(result => {
+        if (result.error) {
+            alert('Error: ' + result.error);
+            if (!result.running) {
+                document.getElementById('generateBtn').disabled = false;
+            }
+        } else {
+            startPolling();
+            pollStatus();
+        }
+    })
+    .catch(err => {
+        alert('Error starting job: ' + err);
+        document.getElementById('generateBtn').disabled = false;
+    });
+});
+
+// Cancel button
+document.getElementById('cancelBtn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to cancel the running job?')) {
+        fetch('/timelapse/api/cancel', { method: 'POST' })
+            .then(r => r.json())
+            .then(result => {
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                }
+                pollStatus();
+            });
+    }
+});
+
+// Update command preview on any input change
+document.getElementById('timelapseForm').addEventListener('input', updateCommandPreview);
+document.getElementById('timelapseForm').addEventListener('change', updateCommandPreview);
+
+// Initial setup
+updateCommandPreview();
+pollStatus(); // Check if there's already a running job
+</script>
+{% endblock %}

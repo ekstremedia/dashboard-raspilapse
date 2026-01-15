@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Image Gallery - Raspilapse{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Image Gallery</h1>
+            <p class="text-gray-600">Browse captured images by date</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <label class="text-sm text-gray-600">Date:</label>
+            <input type="date" id="datePicker"
+                class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+    </div>
+
+    <!-- Date quick select -->
+    <div class="mb-6 flex flex-wrap gap-2" id="recentDates">
+        <span class="text-sm text-gray-500">Recent dates:</span>
+        <!-- Filled by JS -->
+    </div>
+
+    <!-- Loading state -->
+    <div id="loadingState" class="text-center py-12">
+        <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-2 text-gray-500">Loading images...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="hidden text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <p class="mt-2 text-gray-500">No images found for this date</p>
+    </div>
+
+    <!-- Image grid -->
+    <div id="imageGrid" class="hidden grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+        <!-- Filled by JS -->
+    </div>
+
+    <!-- Image count -->
+    <div id="imageCount" class="hidden mt-4 text-center text-gray-500"></div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    <button id="lightboxClose" class="absolute top-4 right-4 text-white hover:text-gray-300">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </button>
+    <button id="lightboxPrev" class="absolute left-4 text-white hover:text-gray-300">
+        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
+    <button id="lightboxNext" class="absolute right-4 text-white hover:text-gray-300">
+        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+    </button>
+    <img id="lightboxImage" class="max-h-screen max-w-full object-contain" src="" alt="">
+    <div id="lightboxInfo" class="absolute bottom-4 left-4 text-white text-sm"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let images = [];
+let currentImageIndex = 0;
+let availableDates = [];
+
+function formatDate(year, month, day) {
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function loadAvailableDates() {
+    fetch('/gallery/api/dates')
+        .then(r => r.json())
+        .then(data => {
+            availableDates = data.dates;
+
+            // Show recent dates as quick links
+            const container = document.getElementById('recentDates');
+            const links = data.dates.slice(0, 7).map(d => `
+                <button onclick="loadDate(${d.year}, ${d.month}, ${d.day})"
+                    class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-sm">
+                    ${d.date} (${d.count})
+                </button>
+            `).join('');
+            container.innerHTML = '<span class="text-sm text-gray-500">Recent dates:</span>' + links;
+
+            // Load most recent date by default if not specified in URL
+            if (data.dates.length > 0 && !window.initialDate) {
+                const latest = data.dates[0];
+                loadDate(latest.year, latest.month, latest.day);
+            }
+        });
+}
+
+function loadDate(year, month, day) {
+    const dateStr = formatDate(year, month, day);
+    document.getElementById('datePicker').value = dateStr;
+
+    document.getElementById('loadingState').classList.remove('hidden');
+    document.getElementById('emptyState').classList.add('hidden');
+    document.getElementById('imageGrid').classList.add('hidden');
+    document.getElementById('imageCount').classList.add('hidden');
+
+    fetch(`/gallery/api/images/${year}/${month}/${day}`)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('loadingState').classList.add('hidden');
+            images = data.images;
+
+            if (images.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            }
+
+            const grid = document.getElementById('imageGrid');
+            grid.innerHTML = images.map((img, idx) => `
+                <div class="relative aspect-video bg-gray-200 cursor-pointer overflow-hidden rounded"
+                     onclick="openLightbox(${idx})">
+                    <img src="${img.url}" alt="${img.filename}"
+                        class="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy">
+                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1">
+                        ${img.time || ''}
+                    </div>
+                </div>
+            `).join('');
+
+            grid.classList.remove('hidden');
+            document.getElementById('imageCount').classList.remove('hidden');
+            document.getElementById('imageCount').textContent = `${images.length} images`;
+        })
+        .catch(err => {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+        });
+}
+
+function openLightbox(index) {
+    currentImageIndex = index;
+    updateLightboxImage();
+    document.getElementById('lightbox').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function updateLightboxImage() {
+    const img = images[currentImageIndex];
+    document.getElementById('lightboxImage').src = img.url;
+    document.getElementById('lightboxInfo').textContent = `${img.filename} (${currentImageIndex + 1}/${images.length})`;
+}
+
+function nextImage() {
+    currentImageIndex = (currentImageIndex + 1) % images.length;
+    updateLightboxImage();
+}
+
+function prevImage() {
+    currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+    updateLightboxImage();
+}
+
+// Event listeners
+document.getElementById('datePicker').addEventListener('change', function() {
+    const parts = this.value.split('-');
+    if (parts.length === 3) {
+        loadDate(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+    }
+});
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+document.getElementById('lightboxPrev').addEventListener('click', prevImage);
+document.getElementById('lightboxNext').addEventListener('click', nextImage);
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    if (document.getElementById('lightbox').classList.contains('hidden')) return;
+
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') prevImage();
+    if (e.key === 'ArrowRight') nextImage();
+});
+
+// Click outside image to close
+document.getElementById('lightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeLightbox();
+});
+
+// Check for URL parameters
+{% if year and month and day %}
+window.initialDate = true;
+loadDate({{ year }}, {{ month }}, {{ day }});
+{% endif %}
+
+// Initial load
+loadAvailableDates();
+</script>
+{% endblock %}

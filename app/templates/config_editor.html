@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Config Editor - Raspilapse{% endblock %}
+
+{% block extra_head %}
+<style>
+    #configEditor {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        tab-size: 2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Config Editor</h1>
+            <p class="text-gray-600">Edit raspilapse configuration</p>
+        </div>
+        <div class="flex space-x-2">
+            <button id="backupsBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">
+                Backups
+            </button>
+            <button id="validateBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition-colors">
+                Validate
+            </button>
+            <button id="saveBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+                Save
+            </button>
+        </div>
+    </div>
+
+    <!-- Status message -->
+    <div id="statusMessage" class="hidden mb-4 p-4 rounded-lg"></div>
+
+    <!-- Backups panel -->
+    <div id="backupsPanel" class="hidden mb-6 bg-white rounded-lg shadow p-4">
+        <h3 class="font-semibold text-gray-800 mb-3">Available Backups</h3>
+        <div id="backupsList" class="space-y-2">
+            Loading...
+        </div>
+    </div>
+
+    <!-- Editor -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-gray-100 px-4 py-2 border-b flex items-center justify-between">
+            <span class="text-sm text-gray-600 font-mono">/home/pi/raspilapse/config/config.yml</span>
+            <span id="editorStatus" class="text-sm text-gray-500">Loading...</span>
+        </div>
+        <textarea
+            id="configEditor"
+            class="w-full p-4 bg-gray-900 text-gray-100 focus:outline-none resize-none"
+            rows="35"
+            spellcheck="false"
+        ></textarea>
+    </div>
+
+    <!-- Help section -->
+    <div class="mt-6 bg-blue-50 rounded-lg p-4">
+        <h3 class="font-semibold text-blue-800 mb-2">Tips</h3>
+        <ul class="text-sm text-blue-700 space-y-1">
+            <li>- Changes are validated before saving</li>
+            <li>- A backup is created automatically before each save</li>
+            <li>- You can restore from previous backups using the Backups button</li>
+            <li>- The raspilapse service will use the new config on next capture</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let originalContent = '';
+
+function showMessage(message, type) {
+    const div = document.getElementById('statusMessage');
+    div.textContent = message;
+    div.className = 'mb-4 p-4 rounded-lg';
+
+    if (type === 'success') {
+        div.classList.add('bg-green-100', 'text-green-800');
+    } else if (type === 'error') {
+        div.classList.add('bg-red-100', 'text-red-800');
+    } else if (type === 'warning') {
+        div.classList.add('bg-yellow-100', 'text-yellow-800');
+    }
+
+    div.classList.remove('hidden');
+    setTimeout(() => div.classList.add('hidden'), 5000);
+}
+
+function loadConfig() {
+    document.getElementById('editorStatus').textContent = 'Loading...';
+
+    fetch('/config/api/load')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showMessage('Error loading config: ' + data.error, 'error');
+                return;
+            }
+            document.getElementById('configEditor').value = data.content;
+            originalContent = data.content;
+            document.getElementById('editorStatus').textContent = 'Loaded';
+        })
+        .catch(err => {
+            showMessage('Error loading config: ' + err, 'error');
+            document.getElementById('editorStatus').textContent = 'Error';
+        });
+}
+
+function validateConfig() {
+    const content = document.getElementById('configEditor').value;
+
+    fetch('/config/api/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.valid) {
+            showMessage('Configuration is valid!', 'success');
+        } else {
+            showMessage('Validation errors:\n' + data.errors.join('\n'), 'error');
+        }
+    })
+    .catch(err => showMessage('Validation failed: ' + err, 'error'));
+}
+
+function saveConfig() {
+    const content = document.getElementById('configEditor').value;
+
+    if (content === originalContent) {
+        showMessage('No changes to save', 'warning');
+        return;
+    }
+
+    document.getElementById('saveBtn').disabled = true;
+    document.getElementById('editorStatus').textContent = 'Saving...';
+
+    fetch('/config/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            showMessage('Save failed: ' + data.error + (data.errors ? '\n' + data.errors.join('\n') : ''), 'error');
+            document.getElementById('editorStatus').textContent = 'Error';
+        } else {
+            showMessage('Configuration saved successfully!', 'success');
+            originalContent = content;
+            document.getElementById('editorStatus').textContent = 'Saved';
+        }
+        document.getElementById('saveBtn').disabled = false;
+    })
+    .catch(err => {
+        showMessage('Save failed: ' + err, 'error');
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('editorStatus').textContent = 'Error';
+    });
+}
+
+function loadBackups() {
+    const panel = document.getElementById('backupsPanel');
+    const list = document.getElementById('backupsList');
+
+    panel.classList.toggle('hidden');
+
+    if (!panel.classList.contains('hidden')) {
+        list.innerHTML = 'Loading...';
+
+        fetch('/config/api/backups')
+            .then(r => r.json())
+            .then(data => {
+                if (data.backups.length === 0) {
+                    list.innerHTML = '<p class="text-gray-500">No backups available</p>';
+                    return;
+                }
+
+                list.innerHTML = data.backups.map(b => `
+                    <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div>
+                            <span class="font-mono text-sm">${b.filename}</span>
+                            <span class="text-xs text-gray-500 ml-2">${new Date(b.modified).toLocaleString()}</span>
+                        </div>
+                        <button onclick="restoreBackup('${b.filename}')"
+                            class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">
+                            Restore
+                        </button>
+                    </div>
+                `).join('');
+            })
+            .catch(err => {
+                list.innerHTML = '<p class="text-red-500">Error loading backups</p>';
+            });
+    }
+}
+
+function restoreBackup(filename) {
+    if (!confirm('Restore this backup? Current config will be backed up first.')) {
+        return;
+    }
+
+    fetch('/config/api/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backup_file: filename })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            showMessage('Restore failed: ' + data.error, 'error');
+        } else {
+            showMessage('Backup restored successfully!', 'success');
+            loadConfig();
+            document.getElementById('backupsPanel').classList.add('hidden');
+        }
+    })
+    .catch(err => showMessage('Restore failed: ' + err, 'error'));
+}
+
+// Track changes
+document.getElementById('configEditor').addEventListener('input', function() {
+    const hasChanges = this.value !== originalContent;
+    document.getElementById('editorStatus').textContent = hasChanges ? 'Modified' : 'No changes';
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveConfig();
+    }
+});
+
+// Button handlers
+document.getElementById('validateBtn').addEventListener('click', validateConfig);
+document.getElementById('saveBtn').addEventListener('click', saveConfig);
+document.getElementById('backupsBtn').addEventListener('click', loadBackups);
+
+// Initial load
+loadConfig();
+</script>
+{% endblock %}

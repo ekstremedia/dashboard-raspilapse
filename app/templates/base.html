@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Raspilapse Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .nav-icon { width: 1rem !important; height: 1rem !important; min-width: 1rem; flex-shrink: 0; margin-right: 0.75rem; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-56 bg-gray-800 flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4 border-b border-gray-700">
+                <h1 class="text-lg font-bold text-white">Raspilapse</h1>
+                <p class="text-xs text-gray-400">Dashboard</p>
+            </div>
+            <nav class="flex-1 py-2 overflow-y-auto">
+                <a href="/" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path == '/' %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="/timelapse" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path.startswith('/timelapse') %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    Timelapse
+                </a>
+                <a href="/config" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path.startswith('/config') %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Config
+                </a>
+                <a href="/gallery" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path.startswith('/gallery') %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Gallery
+                </a>
+                <a href="/videos" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path.startswith('/videos') %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+                    </svg>
+                    Videos
+                </a>
+                <a href="/system" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path.startswith('/system') %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    System
+                </a>
+                <a href="/logs" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path.startswith('/logs') %}bg-gray-900 text-white border-l-4 border-blue-500{% endif %}">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Logs
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Mobile header -->
+        <div class="md:hidden fixed top-0 left-0 right-0 bg-gray-800 p-3 z-50 flex items-center justify-between">
+            <h1 class="text-base font-bold text-white">Raspilapse</h1>
+            <button id="mobileMenuBtn" class="text-white p-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobile menu overlay -->
+        <div id="mobileMenu" class="hidden md:hidden fixed inset-0 bg-gray-800 z-40 pt-14">
+            <nav class="p-2">
+                <a href="/" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Dashboard</a>
+                <a href="/timelapse" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Timelapse</a>
+                <a href="/config" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Config</a>
+                <a href="/gallery" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Gallery</a>
+                <a href="/videos" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Videos</a>
+                <a href="/system" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">System</a>
+                <a href="/logs" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">Logs</a>
+            </nav>
+        </div>
+
+        <!-- Main content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="md:hidden h-14"></div>
+            <div class="p-4 md:p-6">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('mobileMenuBtn')?.addEventListener('click', function() {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

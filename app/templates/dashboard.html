@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Raspilapse{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <p class="text-gray-600">Live view and quick stats</p>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">CPU Temp</div>
+            <div class="text-2xl font-bold text-gray-800" id="cpuTemp">--</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">Disk Usage</div>
+            <div class="text-2xl font-bold text-gray-800" id="diskUsage">--</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">Memory</div>
+            <div class="text-2xl font-bold text-gray-800" id="memoryUsage">--</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">Images Today</div>
+            <div class="text-2xl font-bold text-gray-800" id="imagesToday">--</div>
+        </div>
+    </div>
+
+    <!-- Latest image -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+            <div>
+                <h2 class="font-semibold text-gray-800">Latest Capture</h2>
+                <p class="text-sm text-gray-500" id="lastCapture">Loading...</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">Auto-refresh:</span>
+                <span id="countdown" class="text-sm font-mono bg-gray-200 px-2 py-1 rounded">30s</span>
+            </div>
+        </div>
+        <div class="relative bg-black">
+            <img
+                id="statusImage"
+                src="/status.jpg"
+                alt="Latest capture"
+                class="w-full h-auto"
+                onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1920 1080%22><rect fill=%22%23374151%22 width=%221920%22 height=%221080%22/><text x=%22960%22 y=%22540%22 fill=%22%239CA3AF%22 text-anchor=%22middle%22 font-size=%2248%22>No image available</text></svg>'"
+            >
+        </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <a href="/timelapse" class="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-4 text-center transition-colors">
+            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            Generate Timelapse
+        </a>
+        <a href="/gallery" class="bg-green-500 hover:bg-green-600 text-white rounded-lg p-4 text-center transition-colors">
+            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Browse Gallery
+        </a>
+        <a href="/videos" class="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-4 text-center transition-colors">
+            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+            </svg>
+            View Videos
+        </a>
+        <a href="/config" class="bg-gray-500 hover:bg-gray-600 text-white rounded-lg p-4 text-center transition-colors">
+            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Edit Config
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let countdown = 30;
+let refreshInterval;
+
+function updateStats() {
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('lastCapture').textContent = 'Last capture: ' + data.last_capture;
+            if (data.stats) {
+                document.getElementById('cpuTemp').textContent = data.stats.cpu_temp ? data.stats.cpu_temp + ' C' : '--';
+                document.getElementById('diskUsage').textContent = data.stats.disk_percent ? data.stats.disk_percent + '%' : '--';
+                document.getElementById('memoryUsage').textContent = data.stats.memory_percent ? data.stats.memory_percent + '%' : '--';
+                document.getElementById('imagesToday').textContent = data.stats.images_today ?? '--';
+            }
+        })
+        .catch(err => console.error('Error fetching status:', err));
+}
+
+function refreshImage() {
+    const img = document.getElementById('statusImage');
+    img.src = '/status.jpg?t=' + Date.now();
+    updateStats();
+    countdown = 30;
+}
+
+function updateCountdown() {
+    document.getElementById('countdown').textContent = countdown + 's';
+    countdown--;
+    if (countdown < 0) {
+        refreshImage();
+    }
+}
+
+// Initial load
+updateStats();
+
+// Start countdown
+refreshInterval = setInterval(updateCountdown, 1000);
+
+// Click image to refresh immediately
+document.getElementById('statusImage').addEventListener('click', refreshImage);
+</script>
+{% endblock %}

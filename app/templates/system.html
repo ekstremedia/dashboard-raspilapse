@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}System Status - Raspilapse{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">System Status</h1>
+        <p class="text-gray-600">Monitor system resources and service status</p>
+    </div>
+
+    <!-- Service status -->
+    <div class="bg-white rounded-lg shadow mb-6 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Service Status</h2>
+        <div class="flex items-center">
+            <span id="serviceIndicator" class="w-4 h-4 rounded-full bg-gray-300 mr-3"></span>
+            <span id="serviceStatus" class="text-gray-600">Checking...</span>
+        </div>
+    </div>
+
+    <!-- System metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- CPU Temperature -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">CPU Temperature</h3>
+            <div class="text-3xl font-bold text-gray-800" id="cpuTemp">--</div>
+            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="cpuTempBar" class="h-full bg-green-500 transition-all" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Memory -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Memory Usage</h3>
+            <div class="text-3xl font-bold text-gray-800" id="memoryUsage">--</div>
+            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="memoryBar" class="h-full bg-blue-500 transition-all" style="width: 0%"></div>
+            </div>
+            <div class="text-sm text-gray-500 mt-1" id="memoryDetail"></div>
+        </div>
+
+        <!-- Root disk -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Root Disk (/)</h3>
+            <div class="text-3xl font-bold text-gray-800" id="diskUsage">--</div>
+            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="diskBar" class="h-full bg-purple-500 transition-all" style="width: 0%"></div>
+            </div>
+            <div class="text-sm text-gray-500 mt-1" id="diskDetail"></div>
+        </div>
+
+        <!-- Images disk -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Images Storage</h3>
+            <div class="text-3xl font-bold text-gray-800" id="imagesDiskUsage">--</div>
+            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="imagesDiskBar" class="h-full bg-orange-500 transition-all" style="width: 0%"></div>
+            </div>
+            <div class="text-sm text-gray-500 mt-1" id="imagesDiskDetail"></div>
+        </div>
+
+        <!-- Load average -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Load Average</h3>
+            <div class="text-3xl font-bold text-gray-800" id="loadAvg">--</div>
+            <div class="text-sm text-gray-500 mt-1" id="loadDetail"></div>
+        </div>
+
+        <!-- Uptime -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Uptime</h3>
+            <div class="text-3xl font-bold text-gray-800" id="uptime">--</div>
+        </div>
+    </div>
+
+    <!-- Last updated -->
+    <div class="mt-6 text-center text-sm text-gray-500">
+        Last updated: <span id="lastUpdate">--</span>
+        <span class="ml-4">(Auto-refreshes every 5 seconds)</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getTempColor(temp) {
+    if (temp < 50) return 'bg-green-500';
+    if (temp < 70) return 'bg-yellow-500';
+    return 'bg-red-500';
+}
+
+function getUsageColor(percent) {
+    if (percent < 70) return percent < 50 ? 'bg-green-500' : 'bg-blue-500';
+    if (percent < 90) return 'bg-yellow-500';
+    return 'bg-red-500';
+}
+
+function updateMetrics() {
+    fetch('/system/api/metrics')
+        .then(r => r.json())
+        .then(data => {
+            // CPU Temperature
+            if (data.cpu_temp) {
+                document.getElementById('cpuTemp').textContent = data.cpu_temp + ' C';
+                const tempPercent = Math.min((data.cpu_temp / 85) * 100, 100);
+                const bar = document.getElementById('cpuTempBar');
+                bar.style.width = tempPercent + '%';
+                bar.className = 'h-full transition-all ' + getTempColor(data.cpu_temp);
+            }
+
+            // Memory
+            if (data.memory) {
+                document.getElementById('memoryUsage').textContent = data.memory.percent + '%';
+                const memBar = document.getElementById('memoryBar');
+                memBar.style.width = data.memory.percent + '%';
+                memBar.className = 'h-full transition-all ' + getUsageColor(data.memory.percent);
+                document.getElementById('memoryDetail').textContent =
+                    `${Math.round(data.memory.used_mb)} / ${Math.round(data.memory.total_mb)} MB`;
+            }
+
+            // Root disk
+            if (data.disk) {
+                document.getElementById('diskUsage').textContent = data.disk.percent + '%';
+                const diskBar = document.getElementById('diskBar');
+                diskBar.style.width = data.disk.percent + '%';
+                diskBar.className = 'h-full transition-all ' + getUsageColor(data.disk.percent);
+                document.getElementById('diskDetail').textContent =
+                    `${data.disk.used_gb} / ${data.disk.total_gb} GB (${data.disk.free_gb} GB free)`;
+            }
+
+            // Images disk
+            if (data.disk_images) {
+                document.getElementById('imagesDiskUsage').textContent = data.disk_images.percent + '%';
+                const imgBar = document.getElementById('imagesDiskBar');
+                imgBar.style.width = data.disk_images.percent + '%';
+                imgBar.className = 'h-full transition-all ' + getUsageColor(data.disk_images.percent);
+                document.getElementById('imagesDiskDetail').textContent =
+                    `${data.disk_images.used_gb} / ${data.disk_images.total_gb} GB (${data.disk_images.free_gb} GB free)`;
+            }
+
+            // Load average
+            if (data.load) {
+                document.getElementById('loadAvg').textContent = data.load['1min'].toFixed(2);
+                document.getElementById('loadDetail').textContent =
+                    `1m: ${data.load['1min'].toFixed(2)} | 5m: ${data.load['5min'].toFixed(2)} | 15m: ${data.load['15min'].toFixed(2)}`;
+            }
+
+            // Uptime
+            if (data.uptime) {
+                document.getElementById('uptime').textContent = data.uptime;
+            }
+
+            // Service status
+            const indicator = document.getElementById('serviceIndicator');
+            const status = document.getElementById('serviceStatus');
+            if (data.raspilapse_service === true) {
+                indicator.className = 'w-4 h-4 rounded-full bg-green-500 mr-3';
+                status.textContent = 'Raspilapse service is running';
+            } else if (data.raspilapse_service === false) {
+                indicator.className = 'w-4 h-4 rounded-full bg-red-500 mr-3';
+                status.textContent = 'Raspilapse service is stopped';
+            } else {
+                indicator.className = 'w-4 h-4 rounded-full bg-gray-300 mr-3';
+                status.textContent = 'Service status unknown';
+            }
+
+            // Last update
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        })
+        .catch(err => console.error('Error fetching metrics:', err));
+}
+
+// Initial load
+updateMetrics();
+
+// Auto refresh every 5 seconds
+setInterval(updateMetrics, 5000);
+</script>
+{% endblock %}
