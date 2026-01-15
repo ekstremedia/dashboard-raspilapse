@@ -73,6 +73,27 @@ def start_timelapse_job(raspilapse_root, args, job_status_file):
         return {'error': str(e)}
 
 
+def is_process_running(pid):
+    """Check if a specific process is still running."""
+    try:
+        os.kill(pid, 0)
+        # Process exists, but check if it's a zombie
+        try:
+            with open(f'/proc/{pid}/status', 'r') as f:
+                for line in f:
+                    if line.startswith('State:'):
+                        state = line.split()[1]
+                        # Z = zombie, process finished but not reaped
+                        if state == 'Z':
+                            return False
+                        return True
+        except (IOError, IndexError):
+            # Can't read status, assume running if kill succeeded
+            return True
+    except OSError:
+        return False
+
+
 def get_job_status(job_status_file):
     """Get current job status"""
     if not Path(job_status_file).exists():
@@ -91,17 +112,27 @@ def get_job_status(job_status_file):
     except (json.JSONDecodeError, IOError):
         return {'status': 'idle'}
 
+    # If already marked as completed or cancelled, return as-is
+    if status.get('status') in ('completed', 'cancelled'):
+        log_file = status.get('log_file', '/tmp/raspilapse-job.log')
+        status['output'] = read_recent_output(log_file, lines=50)
+        return status
+
     # Check if process still running
     pid = status.get('pid')
     if pid:
-        try:
-            os.kill(pid, 0)  # Check if process exists
-            # Process still running - read recent log output
+        # Check both the original process AND if ffmpeg/make_timelapse is still running
+        process_alive = is_process_running(pid)
+        can_run, _ = can_start_job()  # This checks for ffmpeg and make_timelapse
+
+        if process_alive or not can_run:
+            # Still running - read recent log output
             log_file = status.get('log_file', '/tmp/raspilapse-job.log')
             output = read_recent_output(log_file)
             status['output'] = output
+            status['status'] = 'running'
             return status
-        except OSError:
+        else:
             # Process finished
             status['status'] = 'completed'
             status['finished'] = datetime.now().isoformat()
