@@ -93,7 +93,4 @@ def api_backup():
 @bp.route("/api/schema")
 def api_schema():
     """Return the config schema for the visual editor"""
-    return jsonify({
-        "schema": get_schema(),
-        "section_order": get_section_order()
-    })
+    return jsonify({"schema": get_schema(), "section_order": get_section_order()})
