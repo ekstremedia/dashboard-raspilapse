@@ -3,6 +3,7 @@
 {% block title %}Config Editor - Raspilapse{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 <style>
     #configEditor {
         font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -10,65 +11,175 @@
         line-height: 1.5;
         tab-size: 2;
     }
+    .field-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    .field-label-col {
+        flex: 0 0 200px;
+        padding-top: 0.5rem;
+    }
+    .field-input-col {
+        flex: 1;
+        min-width: 0;
+    }
+    .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .slider-container .range-slider {
+        flex: 1;
+    }
+    .slider-value {
+        min-width: 60px;
+        text-align: right;
+        font-family: monospace;
+        color: var(--text-secondary);
+    }
+    .rgba-picker {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .rgba-picker input[type="color"] {
+        width: 50px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .rgba-picker .alpha-slider {
+        width: 100px;
+    }
+    .rgba-preview {
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+                          linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                          linear-gradient(45deg, transparent 75%, #ccc 75%),
+                          linear-gradient(-45deg, transparent 75%, #ccc 75%);
+        background-size: 8px 8px;
+        background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    }
+    .rgba-preview-color {
+        width: 100%;
+        height: 100%;
+        border-radius: 3px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
-    <div class="mb-6 flex justify-between items-center">
+    <!-- Header -->
+    <div class="config-editor-header mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Config Editor</h1>
-            <p class="text-gray-600">Edit raspilapse configuration</p>
+            <h1 class="text-2xl font-bold text-main">Config Editor</h1>
+            <p class="text-sub text-sm">Edit raspilapse configuration</p>
         </div>
-        <div class="flex space-x-2">
-            <button id="backupsBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">
+        <div class="flex items-center gap-3 flex-wrap">
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <button id="visualModeBtn" class="active" onclick="setMode('visual')">Visual</button>
+                <button id="rawModeBtn" onclick="setMode('raw')">Raw YAML</button>
+            </div>
+
+            <!-- Changes Badge -->
+            <span id="changesBadge" class="changes-badge hidden">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <span id="changesCount">0</span> unsaved changes
+            </span>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex gap-2">
+            <button id="backupsBtn" class="btn btn-secondary" onclick="toggleBackups()">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </svg>
                 Backups
             </button>
-            <button id="createBackupBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
-                Create Backup
+            <button id="createBackupBtn" class="btn btn-success" onclick="createBackup()">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Backup
             </button>
-            <button id="validateBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition-colors">
-                Validate
-            </button>
-            <button id="saveBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+        </div>
+        <div class="flex gap-2">
+            <button id="cancelBtn" class="btn btn-secondary" onclick="cancelChanges()" disabled>Cancel</button>
+            <button id="validateBtn" class="btn btn-warning" onclick="validateConfig()">Validate</button>
+            <button id="saveBtn" class="btn btn-primary" onclick="saveConfig()" disabled>
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
                 Save
             </button>
         </div>
     </div>
 
     <!-- Status message -->
-    <div id="statusMessage" class="hidden mb-4 p-4 rounded-lg"></div>
+    <div id="statusMessage" class="status-message hidden"></div>
+
+    <!-- Changes list (collapsible) -->
+    <div id="changesList" class="changes-list hidden">
+        <div class="changes-list-header" onclick="toggleChangesList()">
+            <span>View Changes</span>
+            <svg id="changesChevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div id="changesListContent" class="changes-list-content hidden"></div>
+    </div>
 
     <!-- Backups panel -->
-    <div id="backupsPanel" class="hidden mb-6 bg-white rounded-lg shadow p-4">
-        <h3 class="font-semibold text-gray-800 mb-3">Available Backups</h3>
-        <div id="backupsList" class="space-y-2">
-            Loading...
+    <div id="backupsPanel" class="card mb-4 hidden">
+        <div class="p-4">
+            <h3 class="font-semibold text-main mb-3">Available Backups</h3>
+            <div id="backupsList" class="space-y-2">Loading...</div>
         </div>
     </div>
 
-    <!-- Editor -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="bg-gray-100 px-4 py-2 border-b flex items-center justify-between">
-            <span class="text-sm text-gray-600 font-mono">/home/pi/raspilapse/config/config.yml</span>
-            <span id="editorStatus" class="text-sm text-gray-500">Loading...</span>
+    <!-- Visual Editor -->
+    <div id="visualEditor" class="space-y-2">
+        <div class="text-center py-8 text-sub">Loading configuration...</div>
+    </div>
+
+    <!-- Raw YAML Editor -->
+    <div id="rawEditor" class="card hidden">
+        <div class="p-3 border-b border-main flex items-center justify-between" style="background-color: var(--bg-tertiary);">
+            <span class="text-sm font-mono text-sub">/home/pi/raspilapse/config/config.yml</span>
+            <span id="editorStatus" class="text-sm text-sub">Loading...</span>
         </div>
         <textarea
             id="configEditor"
-            class="w-full p-4 bg-gray-900 text-gray-100 focus:outline-none resize-none"
+            class="w-full p-4 focus:outline-none"
             rows="35"
             spellcheck="false"
+            style="background-color: var(--bg-primary); color: var(--text-primary);"
         ></textarea>
     </div>
 
     <!-- Help section -->
-    <div class="mt-6 bg-blue-50 rounded-lg p-4">
-        <h3 class="font-semibold text-blue-800 mb-2">Tips</h3>
-        <ul class="text-sm text-blue-700 space-y-1">
+    <div class="card mt-6 p-4" style="background-color: var(--status-info-bg); border-color: var(--status-info-border);">
+        <h3 class="font-semibold mb-2" style="color: var(--status-info-text);">Tips</h3>
+        <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
             <li>- Changes are validated before saving</li>
             <li>- A backup is created automatically before each save</li>
             <li>- You can restore from previous backups using the Backups button</li>
             <li>- The raspilapse service will use the new config on next capture</li>
+            <li>- Use Ctrl+S (or Cmd+S) to save quickly</li>
         </ul>
     </div>
 </div>
@@ -76,198 +187,963 @@
 
 {% block extra_js %}
 <script>
-let originalContent = '';
+// ============================================================
+// State Management
+// ============================================================
+const state = {
+    schema: {},
+    sectionOrder: [],
+    original: {},
+    current: {},
+    changes: [],
+    isDirty: false,
+    mode: 'visual',
+    changesExpanded: false
+};
 
-function showMessage(message, type) {
-    const div = document.getElementById('statusMessage');
-    div.textContent = message;
-    div.className = 'mb-4 p-4 rounded-lg';
+// ============================================================
+// Initialization
+// ============================================================
+async function init() {
+    try {
+        // Load schema and config in parallel
+        const [schemaRes, configRes] = await Promise.all([
+            fetch('/config/api/schema'),
+            fetch('/config/api/load')
+        ]);
 
-    if (type === 'success') {
-        div.classList.add('bg-green-100', 'text-green-800');
-    } else if (type === 'error') {
-        div.classList.add('bg-red-100', 'text-red-800');
-    } else if (type === 'warning') {
-        div.classList.add('bg-yellow-100', 'text-yellow-800');
+        const schemaData = await schemaRes.json();
+        const configData = await configRes.json();
+
+        if (configData.error) {
+            showMessage('Error loading config: ' + configData.error, 'error');
+            return;
+        }
+
+        state.schema = schemaData.schema;
+        state.sectionOrder = schemaData.section_order;
+
+        // Parse YAML
+        const config = jsyaml.load(configData.content);
+        state.original = JSON.parse(JSON.stringify(config));
+        state.current = JSON.parse(JSON.stringify(config));
+
+        // Render visual editor
+        renderVisualEditor();
+
+        // Set up raw editor
+        document.getElementById('configEditor').value = configData.content;
+        document.getElementById('editorStatus').textContent = 'Loaded';
+
+    } catch (err) {
+        console.error('Init error:', err);
+        showMessage('Error initializing editor: ' + err.message, 'error');
+    }
+}
+
+// ============================================================
+// Visual Editor Rendering
+// ============================================================
+function renderVisualEditor() {
+    const container = document.getElementById('visualEditor');
+    let html = '';
+
+    for (const sectionKey of state.sectionOrder) {
+        const section = state.schema[sectionKey];
+        if (!section || !section._label) continue;
+
+        html += renderSection(sectionKey, section, state.current[sectionKey] || {});
     }
 
-    div.classList.remove('hidden');
-    setTimeout(() => div.classList.add('hidden'), 5000);
+    container.innerHTML = html;
+
+    // Attach event listeners
+    attachFieldListeners();
 }
 
-function loadConfig() {
-    document.getElementById('editorStatus').textContent = 'Loading...';
+function renderSection(sectionKey, section, values) {
+    const description = section._description || '';
 
-    fetch('/config/api/load')
-        .then(r => r.json())
-        .then(data => {
-            if (data.error) {
-                showMessage('Error loading config: ' + data.error, 'error');
-                return;
-            }
-            document.getElementById('configEditor').value = data.content;
-            originalContent = data.content;
-            document.getElementById('editorStatus').textContent = 'Loaded';
-        })
-        .catch(err => {
-            showMessage('Error loading config: ' + err, 'error');
-            document.getElementById('editorStatus').textContent = 'Error';
+    let fieldsHtml = '';
+    for (const [fieldKey, fieldDef] of Object.entries(section)) {
+        if (fieldKey.startsWith('_')) continue;
+        const path = `${sectionKey}.${fieldKey}`;
+        const value = values[fieldKey];
+        fieldsHtml += renderField(path, fieldKey, fieldDef, value);
+    }
+
+    return `
+        <details class="config-section" open>
+            <summary>
+                <svg class="w-4 h-4 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>${section._label}</span>
+                ${description ? `<span class="text-xs text-sub ml-2 font-normal">${description}</span>` : ''}
+            </summary>
+            <div class="config-section-content">
+                ${fieldsHtml}
+            </div>
+        </details>
+    `;
+}
+
+function renderField(path, fieldKey, fieldDef, value) {
+    // Check if it's a nested object
+    if (fieldDef._is_object) {
+        return renderNestedObject(path, fieldKey, fieldDef, value || {});
+    }
+
+    // Check if it's an array field
+    if (fieldDef._is_array) {
+        return renderArrayField(path, fieldKey, fieldDef, value || []);
+    }
+
+    const label = fieldDef.label || fieldKey;
+    const help = fieldDef.help || '';
+    const type = fieldDef.type;
+    const disabled = checkDisabled(fieldDef);
+
+    let inputHtml = '';
+
+    switch (type) {
+        case 'boolean':
+            inputHtml = renderToggle(path, value, disabled);
+            break;
+        case 'number':
+            inputHtml = renderNumberInput(path, fieldDef, value, disabled);
+            break;
+        case 'slider':
+            inputHtml = renderSlider(path, fieldDef, value, disabled);
+            break;
+        case 'enum':
+            inputHtml = renderSelect(path, fieldDef, value, disabled);
+            break;
+        case 'text':
+            inputHtml = renderTextInput(path, value, disabled);
+            break;
+        case 'path':
+            inputHtml = renderPathInput(path, value, disabled);
+            break;
+        case 'password':
+            inputHtml = renderPasswordInput(path, value, disabled);
+            break;
+        case 'rgba':
+            inputHtml = renderRgbaInput(path, value, disabled);
+            break;
+        default:
+            inputHtml = renderTextInput(path, value, disabled);
+    }
+
+    return `
+        <div class="field-row form-field ${disabled ? 'disabled' : ''}" data-path="${path}">
+            <div class="field-label-col">
+                <label class="form-label">${label}</label>
+            </div>
+            <div class="field-input-col">
+                ${inputHtml}
+                ${help ? `<p class="form-help">${help}</p>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function renderNestedObject(path, fieldKey, fieldDef, values) {
+    const label = fieldDef._label || fieldKey;
+    const disabled = checkDisabled(fieldDef);
+
+    let fieldsHtml = '';
+    for (const [subKey, subDef] of Object.entries(fieldDef)) {
+        if (subKey.startsWith('_')) continue;
+        const subPath = `${path}.${subKey}`;
+        const subValue = values[subKey];
+        fieldsHtml += renderField(subPath, subKey, subDef, subValue);
+    }
+
+    return `
+        <div class="config-subsection ${disabled ? 'disabled' : ''}" data-path="${path}">
+            <div class="config-subsection-title">${label}</div>
+            ${fieldsHtml}
+        </div>
+    `;
+}
+
+function renderArrayField(path, fieldKey, fieldDef, values) {
+    const label = fieldDef.label || fieldKey;
+    const help = fieldDef.help || '';
+    const length = fieldDef._array_length || 2;
+    const disabled = checkDisabled(fieldDef);
+
+    // For color gains [red, blue]
+    const labels = ['Red', 'Blue'];
+    let inputsHtml = '';
+    for (let i = 0; i < length; i++) {
+        const val = values[i] !== undefined ? values[i] : '';
+        inputsHtml += `
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-sub">${labels[i] || i}</span>
+                <input type="number"
+                       class="flex-1"
+                       data-path="${path}[${i}]"
+                       data-array-index="${i}"
+                       value="${val}"
+                       min="${fieldDef.min || 0}"
+                       max="${fieldDef.max || 100}"
+                       step="${fieldDef.step || 0.01}"
+                       ${disabled ? 'disabled' : ''}>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="field-row form-field ${disabled ? 'disabled' : ''}" data-path="${path}">
+            <div class="field-label-col">
+                <label class="form-label">${label}</label>
+            </div>
+            <div class="field-input-col">
+                <div class="flex gap-4">${inputsHtml}</div>
+                ${help ? `<p class="form-help">${help}</p>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================
+// Input Renderers
+// ============================================================
+function renderToggle(path, value, disabled) {
+    const checked = value === true;
+    return `
+        <label class="toggle-switch">
+            <input type="checkbox" data-path="${path}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+            <span class="toggle-slider"></span>
+        </label>
+    `;
+}
+
+function renderNumberInput(path, fieldDef, value, disabled) {
+    const min = fieldDef.min !== undefined ? fieldDef.min : '';
+    const max = fieldDef.max !== undefined ? fieldDef.max : '';
+    const step = fieldDef.step || 1;
+    const val = value !== undefined ? value : '';
+
+    return `
+        <input type="number"
+               data-path="${path}"
+               value="${val}"
+               ${min !== '' ? `min="${min}"` : ''}
+               ${max !== '' ? `max="${max}"` : ''}
+               step="${step}"
+               ${disabled ? 'disabled' : ''}
+               class="w-32">
+    `;
+}
+
+function renderSlider(path, fieldDef, value, disabled) {
+    const min = fieldDef.min !== undefined ? fieldDef.min : 0;
+    const max = fieldDef.max !== undefined ? fieldDef.max : 100;
+    const step = fieldDef.step || 1;
+    const val = value !== undefined ? value : min;
+
+    return `
+        <div class="slider-container">
+            <input type="range"
+                   class="range-slider"
+                   data-path="${path}"
+                   value="${val}"
+                   min="${min}"
+                   max="${max}"
+                   step="${step}"
+                   ${disabled ? 'disabled' : ''}>
+            <span class="slider-value" data-slider-value="${path}">${val}</span>
+        </div>
+    `;
+}
+
+function renderSelect(path, fieldDef, value, disabled) {
+    const options = fieldDef.options || [];
+    let optionsHtml = '';
+    for (const opt of options) {
+        const selected = opt.value === value || String(opt.value) === String(value);
+        optionsHtml += `<option value="${opt.value}" ${selected ? 'selected' : ''}>${opt.label}</option>`;
+    }
+
+    return `
+        <select data-path="${path}" ${disabled ? 'disabled' : ''} class="w-full max-w-xs">
+            ${optionsHtml}
+        </select>
+    `;
+}
+
+function renderTextInput(path, value, disabled) {
+    const val = value !== undefined && value !== null ? value : '';
+    return `
+        <input type="text"
+               data-path="${path}"
+               value="${escapeHtml(val)}"
+               ${disabled ? 'disabled' : ''}
+               class="w-full">
+    `;
+}
+
+function renderPathInput(path, value, disabled) {
+    const val = value !== undefined && value !== null ? value : '';
+    return `
+        <input type="text"
+               data-path="${path}"
+               value="${escapeHtml(val)}"
+               ${disabled ? 'disabled' : ''}
+               class="w-full font-mono text-sm">
+    `;
+}
+
+function renderPasswordInput(path, value, disabled) {
+    const val = value !== undefined && value !== null ? value : '';
+    return `
+        <input type="password"
+               data-path="${path}"
+               value="${escapeHtml(val)}"
+               ${disabled ? 'disabled' : ''}
+               class="w-full">
+    `;
+}
+
+function renderRgbaInput(path, value, disabled) {
+    // value is [R, G, B, A] array
+    const r = value && value[0] !== undefined ? value[0] : 255;
+    const g = value && value[1] !== undefined ? value[1] : 255;
+    const b = value && value[2] !== undefined ? value[2] : 255;
+    const a = value && value[3] !== undefined ? value[3] : 255;
+
+    const hexColor = rgbToHex(r, g, b);
+    const alphaPercent = Math.round((a / 255) * 100);
+
+    return `
+        <div class="rgba-picker">
+            <input type="color"
+                   data-path="${path}"
+                   data-rgba-color
+                   value="${hexColor}"
+                   ${disabled ? 'disabled' : ''}>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-sub">Alpha:</span>
+                <input type="range"
+                       class="range-slider alpha-slider"
+                       data-path="${path}"
+                       data-rgba-alpha
+                       value="${a}"
+                       min="0"
+                       max="255"
+                       step="1"
+                       ${disabled ? 'disabled' : ''}>
+                <span class="text-xs text-sub" data-rgba-value="${path}">${alphaPercent}%</span>
+            </div>
+            <div class="rgba-preview">
+                <div class="rgba-preview-color" data-rgba-preview="${path}"
+                     style="background-color: rgba(${r}, ${g}, ${b}, ${a/255});"></div>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================
+// Event Handlers
+// ============================================================
+function attachFieldListeners() {
+    // Regular inputs (text, number, select)
+    document.querySelectorAll('[data-path]').forEach(el => {
+        if (el.type === 'checkbox') {
+            el.addEventListener('change', handleToggleChange);
+        } else if (el.type === 'range' && !el.hasAttribute('data-rgba-alpha')) {
+            el.addEventListener('input', handleSliderChange);
+        } else if (el.hasAttribute('data-rgba-color')) {
+            el.addEventListener('input', handleRgbaColorChange);
+        } else if (el.hasAttribute('data-rgba-alpha')) {
+            el.addEventListener('input', handleRgbaAlphaChange);
+        } else if (el.hasAttribute('data-array-index')) {
+            el.addEventListener('change', handleArrayChange);
+        } else if (!el.hasAttribute('data-slider-value') &&
+                   !el.hasAttribute('data-rgba-value') &&
+                   !el.hasAttribute('data-rgba-preview')) {
+            el.addEventListener('change', handleInputChange);
+        }
+    });
+}
+
+function handleInputChange(e) {
+    const path = e.target.dataset.path;
+    let value = e.target.value;
+
+    // Convert to number if it's a number input
+    if (e.target.type === 'number') {
+        value = parseFloat(value);
+        if (isNaN(value)) value = 0;
+    }
+
+    setValueByPath(state.current, path, value);
+    computeChanges();
+    updateDependentFields(path);
+}
+
+function handleToggleChange(e) {
+    const path = e.target.dataset.path;
+    const value = e.target.checked;
+
+    setValueByPath(state.current, path, value);
+    computeChanges();
+    updateDependentFields(path);
+}
+
+function handleSliderChange(e) {
+    const path = e.target.dataset.path;
+    let value = parseFloat(e.target.value);
+
+    // Update display value
+    const valueEl = document.querySelector(`[data-slider-value="${path}"]`);
+    if (valueEl) {
+        valueEl.textContent = value;
+    }
+
+    setValueByPath(state.current, path, value);
+    computeChanges();
+}
+
+function handleArrayChange(e) {
+    const fullPath = e.target.dataset.path;
+    // Parse path like "section.field[0]"
+    const match = fullPath.match(/(.+)\[(\d+)\]$/);
+    if (!match) return;
+
+    const path = match[1];
+    const index = parseInt(match[2]);
+    let value = parseFloat(e.target.value);
+    if (isNaN(value)) value = 0;
+
+    let arr = getValueByPath(state.current, path);
+    if (!Array.isArray(arr)) {
+        arr = [];
+    }
+    arr = [...arr]; // Clone
+    arr[index] = value;
+
+    setValueByPath(state.current, path, arr);
+    computeChanges();
+}
+
+function handleRgbaColorChange(e) {
+    const path = e.target.dataset.path;
+    const hex = e.target.value;
+    const rgb = hexToRgb(hex);
+
+    let currentValue = getValueByPath(state.current, path);
+    if (!Array.isArray(currentValue) || currentValue.length < 4) {
+        currentValue = [255, 255, 255, 255];
+    }
+
+    const newValue = [rgb.r, rgb.g, rgb.b, currentValue[3]];
+    setValueByPath(state.current, path, newValue);
+
+    // Update preview
+    updateRgbaPreview(path, newValue);
+    computeChanges();
+}
+
+function handleRgbaAlphaChange(e) {
+    const path = e.target.dataset.path;
+    const alpha = parseInt(e.target.value);
+
+    let currentValue = getValueByPath(state.current, path);
+    if (!Array.isArray(currentValue) || currentValue.length < 4) {
+        currentValue = [255, 255, 255, 255];
+    }
+
+    const newValue = [currentValue[0], currentValue[1], currentValue[2], alpha];
+    setValueByPath(state.current, path, newValue);
+
+    // Update display
+    const valueEl = document.querySelector(`[data-rgba-value="${path}"]`);
+    if (valueEl) {
+        valueEl.textContent = Math.round((alpha / 255) * 100) + '%';
+    }
+
+    // Update preview
+    updateRgbaPreview(path, newValue);
+    computeChanges();
+}
+
+function updateRgbaPreview(path, value) {
+    const previewEl = document.querySelector(`[data-rgba-preview="${path}"]`);
+    if (previewEl) {
+        previewEl.style.backgroundColor = `rgba(${value[0]}, ${value[1]}, ${value[2]}, ${value[3]/255})`;
+    }
+}
+
+// ============================================================
+// Dependency Management
+// ============================================================
+function checkDisabled(fieldDef) {
+    if (!fieldDef._depends_on) return false;
+
+    const depPath = fieldDef._depends_on;
+    const depValue = getValueByPath(state.current, depPath);
+
+    // Check if there's a specific value dependency
+    if (fieldDef._depends_on_value !== undefined) {
+        return depValue !== fieldDef._depends_on_value;
+    }
+
+    // For boolean dependencies, check if it's falsy
+    return !depValue;
+}
+
+function updateDependentFields(changedPath) {
+    // Re-render to update disabled states
+    // For efficiency, we could target specific fields, but re-rendering is simple
+    renderVisualEditor();
+}
+
+// ============================================================
+// Change Tracking
+// ============================================================
+function computeChanges() {
+    const changes = [];
+    findChanges(state.original, state.current, '', changes);
+
+    state.changes = changes;
+    state.isDirty = changes.length > 0;
+
+    updateChangesUI();
+}
+
+function findChanges(original, current, path, changes) {
+    const origKeys = original ? Object.keys(original) : [];
+    const currKeys = current ? Object.keys(current) : [];
+    const allKeys = new Set([...origKeys, ...currKeys]);
+
+    for (const key of allKeys) {
+        const newPath = path ? `${path}.${key}` : key;
+        const origVal = original ? original[key] : undefined;
+        const currVal = current ? current[key] : undefined;
+
+        if (typeof origVal === 'object' && origVal !== null && !Array.isArray(origVal) &&
+            typeof currVal === 'object' && currVal !== null && !Array.isArray(currVal)) {
+            findChanges(origVal, currVal, newPath, changes);
+        } else if (!deepEqual(origVal, currVal)) {
+            changes.push({
+                path: newPath,
+                oldValue: origVal,
+                newValue: currVal
+            });
+        }
+    }
+}
+
+function deepEqual(a, b) {
+    if (a === b) return true;
+    if (a === undefined && b === undefined) return true;
+    if (a === null && b === null) return true;
+    if (typeof a !== typeof b) return false;
+
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+            if (!deepEqual(a[i], b[i])) return false;
+        }
+        return true;
+    }
+
+    if (typeof a === 'object' && typeof b === 'object') {
+        const keysA = Object.keys(a);
+        const keysB = Object.keys(b);
+        if (keysA.length !== keysB.length) return false;
+        for (const key of keysA) {
+            if (!deepEqual(a[key], b[key])) return false;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+function updateChangesUI() {
+    const badge = document.getElementById('changesBadge');
+    const countEl = document.getElementById('changesCount');
+    const listEl = document.getElementById('changesList');
+    const contentEl = document.getElementById('changesListContent');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    if (state.changes.length > 0) {
+        badge.classList.remove('hidden');
+        countEl.textContent = state.changes.length;
+        listEl.classList.remove('hidden');
+        saveBtn.disabled = false;
+        cancelBtn.disabled = false;
+
+        // Render changes list
+        let changesHtml = '';
+        for (const change of state.changes) {
+            const oldStr = formatValue(change.oldValue);
+            const newStr = formatValue(change.newValue);
+            changesHtml += `
+                <div class="change-item">
+                    <span class="change-path">${change.path}</span>:
+                    <span class="change-old">${escapeHtml(oldStr)}</span> →
+                    <span class="change-new">${escapeHtml(newStr)}</span>
+                </div>
+            `;
+        }
+        contentEl.innerHTML = changesHtml;
+    } else {
+        badge.classList.add('hidden');
+        listEl.classList.add('hidden');
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+    }
+}
+
+function formatValue(val) {
+    if (val === undefined) return 'undefined';
+    if (val === null) return 'null';
+    if (Array.isArray(val)) return '[' + val.join(', ') + ']';
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
+}
+
+function toggleChangesList() {
+    const contentEl = document.getElementById('changesListContent');
+    const chevron = document.getElementById('changesChevron');
+
+    state.changesExpanded = !state.changesExpanded;
+
+    if (state.changesExpanded) {
+        contentEl.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+    } else {
+        contentEl.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+// ============================================================
+// Mode Switching
+// ============================================================
+function setMode(mode) {
+    state.mode = mode;
+
+    const visualBtn = document.getElementById('visualModeBtn');
+    const rawBtn = document.getElementById('rawModeBtn');
+    const visualEditor = document.getElementById('visualEditor');
+    const rawEditor = document.getElementById('rawEditor');
+
+    if (mode === 'visual') {
+        visualBtn.classList.add('active');
+        rawBtn.classList.remove('active');
+        visualEditor.classList.remove('hidden');
+        rawEditor.classList.add('hidden');
+
+        // Sync from raw to visual if raw was edited
+        syncFromRaw();
+    } else {
+        visualBtn.classList.remove('active');
+        rawBtn.classList.add('active');
+        visualEditor.classList.add('hidden');
+        rawEditor.classList.remove('hidden');
+
+        // Sync from visual to raw
+        syncToRaw();
+    }
+}
+
+function syncToRaw() {
+    try {
+        const yaml = jsyaml.dump(state.current, {
+            indent: 2,
+            lineWidth: -1,
+            noRefs: true,
+            sortKeys: false
         });
+        document.getElementById('configEditor').value = yaml;
+    } catch (e) {
+        console.error('Error converting to YAML:', e);
+    }
 }
 
-function validateConfig() {
-    const content = document.getElementById('configEditor').value;
+function syncFromRaw() {
+    try {
+        const content = document.getElementById('configEditor').value;
+        const parsed = jsyaml.load(content);
+        state.current = JSON.parse(JSON.stringify(parsed));
+        computeChanges();
+        renderVisualEditor();
+    } catch (e) {
+        console.error('Error parsing YAML:', e);
+        showMessage('YAML parse error: ' + e.message, 'error');
+    }
+}
 
-    fetch('/config/api/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
-    })
-    .then(r => r.json())
-    .then(data => {
+// ============================================================
+// Actions
+// ============================================================
+function cancelChanges() {
+    state.current = JSON.parse(JSON.stringify(state.original));
+    computeChanges();
+    renderVisualEditor();
+    syncToRaw();
+    showMessage('Changes discarded', 'info');
+}
+
+async function validateConfig() {
+    const yaml = state.mode === 'raw'
+        ? document.getElementById('configEditor').value
+        : jsyaml.dump(state.current, { indent: 2, lineWidth: -1, noRefs: true });
+
+    try {
+        const res = await fetch('/config/api/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: yaml })
+        });
+        const data = await res.json();
+
         if (data.valid) {
             showMessage('Configuration is valid!', 'success');
         } else {
             showMessage('Validation errors:\n' + data.errors.join('\n'), 'error');
         }
-    })
-    .catch(err => showMessage('Validation failed: ' + err, 'error'));
+    } catch (err) {
+        showMessage('Validation failed: ' + err.message, 'error');
+    }
 }
 
-function saveConfig() {
-    const content = document.getElementById('configEditor').value;
+async function saveConfig() {
+    // Sync current state to YAML
+    const yaml = jsyaml.dump(state.current, {
+        indent: 2,
+        lineWidth: -1,
+        noRefs: true,
+        sortKeys: false
+    });
 
-    if (content === originalContent) {
-        showMessage('No changes to save', 'warning');
-        return;
-    }
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<svg class="w-4 h-4 mr-1 spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Saving...';
 
-    document.getElementById('saveBtn').disabled = true;
-    document.getElementById('editorStatus').textContent = 'Saving...';
+    try {
+        const res = await fetch('/config/api/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: yaml })
+        });
+        const data = await res.json();
 
-    fetch('/config/api/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
-    })
-    .then(r => r.json())
-    .then(data => {
         if (data.error) {
             showMessage('Save failed: ' + data.error + (data.errors ? '\n' + data.errors.join('\n') : ''), 'error');
-            document.getElementById('editorStatus').textContent = 'Error';
         } else {
             showMessage('Configuration saved successfully!', 'success');
-            originalContent = content;
-            document.getElementById('editorStatus').textContent = 'Saved';
+            state.original = JSON.parse(JSON.stringify(state.current));
+            computeChanges();
+            document.getElementById('configEditor').value = yaml;
         }
-        document.getElementById('saveBtn').disabled = false;
-    })
-    .catch(err => {
-        showMessage('Save failed: ' + err, 'error');
-        document.getElementById('saveBtn').disabled = false;
-        document.getElementById('editorStatus').textContent = 'Error';
-    });
+    } catch (err) {
+        showMessage('Save failed: ' + err.message, 'error');
+    }
+
+    saveBtn.disabled = state.changes.length === 0;
+    saveBtn.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Save';
 }
 
-function loadBackups() {
+// ============================================================
+// Backups
+// ============================================================
+function toggleBackups() {
     const panel = document.getElementById('backupsPanel');
-    const list = document.getElementById('backupsList');
-
     panel.classList.toggle('hidden');
 
     if (!panel.classList.contains('hidden')) {
-        list.innerHTML = 'Loading...';
-
-        fetch('/config/api/backups')
-            .then(r => r.json())
-            .then(data => {
-                if (data.backups.length === 0) {
-                    list.innerHTML = '<p class="text-gray-500">No backups available</p>';
-                    return;
-                }
-
-                list.innerHTML = data.backups.map(b => `
-                    <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <div>
-                            <span class="font-mono text-sm">${b.filename}</span>
-                            <span class="text-xs text-gray-500 ml-2">${new Date(b.modified).toLocaleString()}</span>
-                        </div>
-                        <button onclick="restoreBackup('${b.filename}')"
-                            class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">
-                            Restore
-                        </button>
-                    </div>
-                `).join('');
-            })
-            .catch(err => {
-                list.innerHTML = '<p class="text-red-500">Error loading backups</p>';
-            });
+        loadBackups();
     }
 }
 
-function restoreBackup(filename) {
+async function loadBackups() {
+    const list = document.getElementById('backupsList');
+    list.innerHTML = 'Loading...';
+
+    try {
+        const res = await fetch('/config/api/backups');
+        const data = await res.json();
+
+        if (data.backups.length === 0) {
+            list.innerHTML = '<p class="text-sub">No backups available</p>';
+            return;
+        }
+
+        list.innerHTML = data.backups.map(b => `
+            <div class="flex justify-between items-center p-2 rounded" style="background-color: var(--bg-tertiary);">
+                <div>
+                    <span class="font-mono text-sm">${b.filename}</span>
+                    <span class="text-xs text-sub ml-2">${new Date(b.modified).toLocaleString()}</span>
+                </div>
+                <button onclick="restoreBackup('${b.filename}')" class="btn btn-primary text-sm">
+                    Restore
+                </button>
+            </div>
+        `).join('');
+    } catch (err) {
+        list.innerHTML = '<p class="text-sub">Error loading backups</p>';
+    }
+}
+
+async function restoreBackup(filename) {
     if (!confirm('Restore this backup? Current config will be backed up first.')) {
         return;
     }
 
-    fetch('/config/api/restore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ backup_file: filename })
-    })
-    .then(r => r.json())
-    .then(data => {
+    try {
+        const res = await fetch('/config/api/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ backup_file: filename })
+        });
+        const data = await res.json();
+
         if (data.error) {
             showMessage('Restore failed: ' + data.error, 'error');
         } else {
             showMessage('Backup restored successfully!', 'success');
-            loadConfig();
+            // Reload config
+            const configRes = await fetch('/config/api/load');
+            const configData = await configRes.json();
+            const config = jsyaml.load(configData.content);
+            state.original = JSON.parse(JSON.stringify(config));
+            state.current = JSON.parse(JSON.stringify(config));
+            computeChanges();
+            renderVisualEditor();
+            document.getElementById('configEditor').value = configData.content;
             document.getElementById('backupsPanel').classList.add('hidden');
         }
-    })
-    .catch(err => showMessage('Restore failed: ' + err, 'error'));
+    } catch (err) {
+        showMessage('Restore failed: ' + err.message, 'error');
+    }
 }
 
-// Track changes
-document.getElementById('configEditor').addEventListener('input', function() {
-    const hasChanges = this.value !== originalContent;
-    document.getElementById('editorStatus').textContent = hasChanges ? 'Modified' : 'No changes';
-});
+async function createBackup() {
+    const btn = document.getElementById('createBackupBtn');
+    btn.disabled = true;
 
-// Keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    try {
+        const res = await fetch('/config/api/backup', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.error) {
+            showMessage('Backup failed: ' + data.error, 'error');
+        } else {
+            showMessage('Backup created successfully!', 'success');
+        }
+    } catch (err) {
+        showMessage('Backup failed: ' + err.message, 'error');
+    }
+
+    btn.disabled = false;
+}
+
+// ============================================================
+// Utilities
+// ============================================================
+function showMessage(message, type) {
+    const div = document.getElementById('statusMessage');
+    div.textContent = message;
+    div.className = 'status-message ' + type;
+    div.classList.remove('hidden');
+    setTimeout(() => div.classList.add('hidden'), 5000);
+}
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function getValueByPath(obj, path) {
+    const parts = path.split('.');
+    let current = obj;
+    for (const part of parts) {
+        if (current === undefined || current === null) return undefined;
+        current = current[part];
+    }
+    return current;
+}
+
+function setValueByPath(obj, path, value) {
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (current[parts[i]] === undefined) {
+            current[parts[i]] = {};
+        }
+        current = current[parts[i]];
+    }
+    current[parts[parts.length - 1]] = value;
+}
+
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+}
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : { r: 255, g: 255, b: 255 };
+}
+
+// ============================================================
+// Page Leave Warning
+// ============================================================
+window.addEventListener('beforeunload', function(e) {
+    if (state.isDirty) {
         e.preventDefault();
-        saveConfig();
+        e.returnValue = '';
+        return '';
     }
 });
 
-function createBackup() {
-    document.getElementById('createBackupBtn').disabled = true;
+// ============================================================
+// Keyboard Shortcuts
+// ============================================================
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (!document.getElementById('saveBtn').disabled) {
+            saveConfig();
+        }
+    }
+});
 
-    fetch('/config/api/backup', { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-            if (data.error) {
-                showMessage('Backup failed: ' + data.error, 'error');
-            } else {
-                showMessage('Backup created successfully!', 'success');
-            }
-            document.getElementById('createBackupBtn').disabled = false;
-        })
-        .catch(err => {
-            showMessage('Backup failed: ' + err, 'error');
-            document.getElementById('createBackupBtn').disabled = false;
-        });
-}
+// Raw editor change tracking
+document.getElementById('configEditor').addEventListener('input', function() {
+    if (state.mode === 'raw') {
+        try {
+            const parsed = jsyaml.load(this.value);
+            state.current = JSON.parse(JSON.stringify(parsed));
+            computeChanges();
+        } catch (e) {
+            // Invalid YAML, don't update state
+        }
+    }
+});
 
-// Button handlers
-document.getElementById('validateBtn').addEventListener('click', validateConfig);
-document.getElementById('saveBtn').addEventListener('click', saveConfig);
-document.getElementById('backupsBtn').addEventListener('click', loadBackups);
-document.getElementById('createBackupBtn').addEventListener('click', createBackup);
-
-// Initial load
-loadConfig();
+// ============================================================
+// Initialize
+// ============================================================
+init();
 </script>
 {% endblock %}

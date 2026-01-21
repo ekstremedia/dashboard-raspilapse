@@ -1,17 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark-theme">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Raspilapse Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Theme initialization - runs before page renders to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.documentElement.classList.remove('dark-theme');
+                document.documentElement.classList.add('light-theme');
+            }
+        })();
+    </script>
     <style>
         [x-cloak] { display: none !important; }
         .nav-icon { width: 1rem !important; height: 1rem !important; min-width: 1rem; flex-shrink: 0; margin-right: 0.75rem; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-page min-h-screen">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside class="w-56 bg-gray-800 flex-shrink-0 hidden md:flex md:flex-col">
@@ -70,16 +81,40 @@
                     Graphs
                 </a>
             </nav>
+            <!-- Theme toggle at bottom of sidebar -->
+            <div class="border-t border-gray-700 p-2">
+                <button id="themeToggle" class="theme-toggle">
+                    <!-- Sun icon (shown in dark mode) -->
+                    <svg id="sunIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    <!-- Moon icon (shown in light mode) -->
+                    <svg id="moonIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                    <span id="themeLabel">Light Mode</span>
+                </button>
+            </div>
         </aside>
 
         <!-- Mobile header -->
         <div class="md:hidden fixed top-0 left-0 right-0 bg-gray-800 p-3 z-50 flex items-center justify-between">
             <h1 class="text-base font-bold text-white">{{ camera_name }}</h1>
-            <button id="mobileMenuBtn" class="text-white p-1">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
+            <div class="flex items-center gap-2">
+                <button id="mobileThemeToggle" class="text-gray-300 p-1">
+                    <svg id="mobileSunIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    <svg id="mobileMoonIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                </button>
+                <button id="mobileMenuBtn" class="text-white p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Mobile menu overlay -->
@@ -97,7 +132,7 @@
         </div>
 
         <!-- Main content -->
-        <main class="flex-1 overflow-y-auto">
+        <main class="flex-1 overflow-y-auto bg-page">
             <div class="md:hidden h-14"></div>
             <div class="p-4 md:p-6">
                 {% block content %}{% endblock %}
@@ -106,9 +141,70 @@
     </div>
 
     <script>
+        // Mobile menu toggle
         document.getElementById('mobileMenuBtn')?.addEventListener('click', function() {
             document.getElementById('mobileMenu').classList.toggle('hidden');
         });
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark-theme');
+
+            if (isDark) {
+                html.classList.remove('dark-theme');
+                html.classList.add('light-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.remove('light-theme');
+                html.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+
+            updateThemeIcons();
+        }
+
+        function updateThemeIcons() {
+            const isDark = document.documentElement.classList.contains('dark-theme');
+
+            // Desktop icons
+            const sunIcon = document.getElementById('sunIcon');
+            const moonIcon = document.getElementById('moonIcon');
+            const themeLabel = document.getElementById('themeLabel');
+
+            if (sunIcon && moonIcon && themeLabel) {
+                if (isDark) {
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                    themeLabel.textContent = 'Light Mode';
+                } else {
+                    sunIcon.classList.add('hidden');
+                    moonIcon.classList.remove('hidden');
+                    themeLabel.textContent = 'Dark Mode';
+                }
+            }
+
+            // Mobile icons
+            const mobileSunIcon = document.getElementById('mobileSunIcon');
+            const mobileMoonIcon = document.getElementById('mobileMoonIcon');
+
+            if (mobileSunIcon && mobileMoonIcon) {
+                if (isDark) {
+                    mobileSunIcon.classList.remove('hidden');
+                    mobileMoonIcon.classList.add('hidden');
+                } else {
+                    mobileSunIcon.classList.add('hidden');
+                    mobileMoonIcon.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Initialize icons on page load
+        updateThemeIcons();
+
+        // Event listeners for theme toggle buttons
+        document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+        document.getElementById('mobileThemeToggle')?.addEventListener('click', toggleTheme);
     </script>
     {% block extra_js %}{% endblock %}
 </body>

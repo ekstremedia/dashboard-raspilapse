@@ -1,4 +1,110 @@
-/* Custom styles for Raspilapse Dashboard */
+/* Raspilapse Dashboard - CSS Variables & Theme System */
+
+/* ============================================================
+   CSS VARIABLES - Dark Theme (Default)
+   ============================================================ */
+:root {
+    /* Background colors */
+    --bg-primary: #111827;      /* Page background */
+    --bg-secondary: #1f2937;    /* Cards, sidebar */
+    --bg-tertiary: #374151;     /* Inputs, hover states */
+    --bg-hover: #4b5563;        /* Button hover */
+
+    /* Text colors */
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+
+    /* Border colors */
+    --border-color: #374151;
+    --border-light: #4b5563;
+
+    /* Accent colors */
+    --accent-primary: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-secondary: #10b981;
+    --accent-warning: #f59e0b;
+    --accent-danger: #ef4444;
+
+    /* Status colors */
+    --status-success-bg: rgba(16, 185, 129, 0.1);
+    --status-success-text: #34d399;
+    --status-success-border: #10b981;
+    --status-warning-bg: rgba(245, 158, 11, 0.1);
+    --status-warning-text: #fbbf24;
+    --status-warning-border: #f59e0b;
+    --status-error-bg: rgba(239, 68, 68, 0.1);
+    --status-error-text: #f87171;
+    --status-error-border: #ef4444;
+    --status-info-bg: rgba(59, 130, 246, 0.1);
+    --status-info-text: #60a5fa;
+    --status-info-border: #3b82f6;
+
+    /* Component-specific */
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --input-bg: #1f2937;
+    --input-border: #374151;
+    --input-focus-border: #3b82f6;
+
+    /* Sidebar specific */
+    --sidebar-bg: #1f2937;
+    --sidebar-border: #374151;
+    --sidebar-active-bg: #111827;
+    --sidebar-active-border: #3b82f6;
+}
+
+/* ============================================================
+   Light Theme Override
+   ============================================================ */
+html.light-theme {
+    /* Background colors */
+    --bg-primary: #f3f4f6;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e5e7eb;
+    --bg-hover: #d1d5db;
+
+    /* Text colors */
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+
+    /* Border colors */
+    --border-color: #e5e7eb;
+    --border-light: #d1d5db;
+
+    /* Status colors - lighter backgrounds for light theme */
+    --status-success-bg: rgba(16, 185, 129, 0.1);
+    --status-success-text: #059669;
+    --status-warning-bg: rgba(245, 158, 11, 0.1);
+    --status-warning-text: #d97706;
+    --status-error-bg: rgba(239, 68, 68, 0.1);
+    --status-error-text: #dc2626;
+    --status-info-bg: rgba(59, 130, 246, 0.1);
+    --status-info-text: #2563eb;
+
+    /* Component-specific */
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --input-bg: #ffffff;
+    --input-border: #d1d5db;
+
+    /* Sidebar specific */
+    --sidebar-bg: #1f2937;
+    --sidebar-border: #374151;
+    --sidebar-active-bg: #111827;
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+html {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
 
 /* Smooth transitions */
 * {
@@ -7,24 +113,491 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Scrollbar styling */
+/* ============================================================
+   SCROLLBAR STYLING
+   ============================================================ */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #4b5563;
+    background: var(--bg-hover);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #6b7280;
+    background: var(--text-muted);
 }
+
+/* ============================================================
+   COMPONENT STYLES
+   ============================================================ */
+
+/* Cards */
+.card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    box-shadow: var(--card-shadow);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms;
+}
+
+.btn-primary {
+    background-color: var(--accent-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+    background-color: var(--bg-tertiary);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-secondary {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-hover);
+}
+
+.btn-success {
+    background-color: var(--accent-secondary);
+    color: white;
+}
+
+.btn-warning {
+    background-color: var(--accent-warning);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--accent-danger);
+    color: white;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+textarea,
+select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-primary);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* ============================================================
+   FORM COMPONENTS (for Visual Config Editor)
+   ============================================================ */
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-tertiary);
+    border-radius: 24px;
+    transition: 0.3s;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--accent-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    background-color: white;
+    transform: translateX(20px);
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Slider / Range Input */
+.range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-tertiary);
+    outline: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+    background: var(--accent-hover);
+    transform: scale(1.1);
+}
+
+.range-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    cursor: pointer;
+    border: none;
+}
+
+/* Color Picker */
+.color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.color-picker {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 40px;
+    height: 32px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+}
+
+/* Accordion / Section Styles */
+.config-section {
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+
+.config-section summary {
+    padding: 0.75rem 1rem;
+    background-color: var(--bg-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    user-select: none;
+}
+
+.config-section summary:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.config-section summary::marker,
+.config-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-section summary .chevron {
+    transition: transform 0.2s;
+}
+
+.config-section[open] summary .chevron {
+    transform: rotate(90deg);
+}
+
+.config-section-content {
+    padding: 1rem;
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Nested Sub-sections */
+.config-subsection {
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border-color);
+    margin-top: 0.75rem;
+}
+
+.config-subsection-title {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+/* Form Field */
+.form-field {
+    margin-bottom: 1rem;
+}
+
+.form-field:last-child {
+    margin-bottom: 0;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.form-help {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.form-field.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Monospace for paths */
+.font-mono {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* ============================================================
+   CONFIG EDITOR SPECIFIC STYLES
+   ============================================================ */
+
+/* Editor Header */
+.config-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Mode Toggle */
+.mode-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.mode-toggle button {
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.mode-toggle button:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.mode-toggle button.active {
+    background-color: var(--accent-primary);
+    color: white;
+}
+
+/* Changes Badge */
+.changes-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--status-warning-bg);
+    color: var(--status-warning-text);
+    border: 1px solid var(--status-warning-border);
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.changes-badge.hidden {
+    display: none;
+}
+
+/* Changes List */
+.changes-list {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.changes-list-header {
+    padding: 0.75rem 1rem;
+    background-color: var(--bg-tertiary);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.changes-list-content {
+    padding: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.change-item {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+    background-color: var(--bg-primary);
+}
+
+.change-item:last-child {
+    margin-bottom: 0;
+}
+
+.change-path {
+    font-weight: 500;
+    color: var(--accent-primary);
+}
+
+.change-old {
+    color: var(--accent-danger);
+    text-decoration: line-through;
+}
+
+.change-new {
+    color: var(--accent-secondary);
+}
+
+/* ============================================================
+   STATUS MESSAGES
+   ============================================================ */
+.status-message {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.status-message.success {
+    background-color: var(--status-success-bg);
+    color: var(--status-success-text);
+    border: 1px solid var(--status-success-border);
+}
+
+.status-message.warning {
+    background-color: var(--status-warning-bg);
+    color: var(--status-warning-text);
+    border: 1px solid var(--status-warning-border);
+}
+
+.status-message.error {
+    background-color: var(--status-error-bg);
+    color: var(--status-error-text);
+    border: 1px solid var(--status-error-border);
+}
+
+.status-message.info {
+    background-color: var(--status-info-bg);
+    color: var(--status-info-text);
+    border: 1px solid var(--status-info-border);
+}
+
+/* ============================================================
+   THEME TOGGLE BUTTON
+   ============================================================ */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+
+.theme-toggle:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.theme-toggle svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ============================================================
+   EXISTING STYLES (preserved)
+   ============================================================ */
 
 /* Log viewer specific */
 #logContent {
@@ -32,9 +605,12 @@
     line-height: 1.4;
 }
 
-/* Config editor */
+/* Config editor textarea */
 #configEditor {
     resize: none;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: none;
 }
 
 /* Image gallery hover effect */
@@ -55,4 +631,27 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+/* ============================================================
+   TAILWIND OVERRIDE UTILITIES
+   ============================================================ */
+.bg-card {
+    background-color: var(--bg-secondary) !important;
+}
+
+.bg-page {
+    background-color: var(--bg-primary) !important;
+}
+
+.text-main {
+    color: var(--text-primary) !important;
+}
+
+.text-sub {
+    color: var(--text-secondary) !important;
+}
+
+.border-main {
+    border-color: var(--border-color) !important;
 }

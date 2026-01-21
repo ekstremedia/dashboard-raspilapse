@@ -7,6 +7,7 @@ from app.services.config_service import (
     restore_backup,
     backup_config,
 )
+from app.services.config_schema import get_schema, get_section_order
 
 bp = Blueprint("config", __name__)
 
@@ -87,3 +88,12 @@ def api_backup():
         return jsonify({"success": True, "backup": backup_path})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/api/schema")
+def api_schema():
+    """Return the config schema for the visual editor"""
+    return jsonify({
+        "schema": get_schema(),
+        "section_order": get_section_order()
+    })
