@@ -644,6 +644,10 @@ select:focus {
     background-color: var(--bg-primary) !important;
 }
 
+.bg-tertiary {
+    background-color: var(--bg-tertiary) !important;
+}
+
 .text-main {
     color: var(--text-primary) !important;
 }
@@ -652,6 +656,113 @@ select:focus {
     color: var(--text-secondary) !important;
 }
 
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
 .border-main {
     border-color: var(--border-color) !important;
+}
+
+/* Form inputs with dark theme support */
+.input-themed {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--text-primary) !important;
+}
+
+.input-themed:focus {
+    border-color: var(--input-focus-border) !important;
+}
+
+/* Select dropdowns */
+select.input-themed {
+    background-color: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+select.input-themed option {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Checkbox and radio styling override */
+input[type="checkbox"].input-themed,
+input[type="radio"].input-themed {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+input[type="checkbox"].input-themed:checked,
+input[type="radio"].input-themed:checked {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+/* Themed status boxes */
+.status-running {
+    background-color: var(--status-info-bg) !important;
+    color: var(--status-info-text) !important;
+    border: 1px solid var(--status-info-border);
+}
+
+.status-success {
+    background-color: var(--status-success-bg) !important;
+    color: var(--status-success-text) !important;
+    border: 1px solid var(--status-success-border);
+}
+
+.status-error {
+    background-color: var(--status-error-bg) !important;
+    color: var(--status-error-text) !important;
+    border: 1px solid var(--status-error-border);
+}
+
+.status-warning {
+    background-color: var(--status-warning-bg) !important;
+    color: var(--status-warning-text) !important;
+    border: 1px solid var(--status-warning-border);
+}
+
+/* Badge styles for dark theme */
+.badge-purple {
+    background-color: rgba(147, 51, 234, 0.2);
+    color: #c084fc;
+}
+
+.badge-green {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+
+html.light-theme .badge-purple {
+    background-color: #f3e8ff;
+    color: #7c3aed;
+}
+
+html.light-theme .badge-green {
+    background-color: #dcfce7;
+    color: #16a34a;
+}
+
+/* Progress bar backgrounds */
+.progress-bg {
+    background-color: var(--bg-tertiary);
+}
+
+/* Hover states for interactive elements */
+.hover-card:hover {
+    background-color: var(--bg-tertiary);
+}
+
+/* Date button styles */
+.date-btn {
+    background-color: var(--status-info-bg);
+    color: var(--status-info-text);
+    border: 1px solid var(--status-info-border);
+}
+
+.date-btn:hover {
+    background-color: var(--accent-primary);
+    color: white;
 }

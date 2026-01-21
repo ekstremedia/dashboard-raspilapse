@@ -6,12 +6,12 @@
 <div class="max-w-6xl mx-auto">
     <div class="mb-6 flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Log Viewer</h1>
-            <p class="text-gray-600">View raspilapse log files</p>
+            <h1 class="text-2xl font-bold text-main">Log Viewer</h1>
+            <p class="text-sub">View raspilapse log files</p>
         </div>
         <div class="flex items-center space-x-2">
-            <label class="text-sm text-gray-600">Log file:</label>
-            <select id="logSelect" class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label class="text-sm text-sub">Log file:</label>
+            <select id="logSelect" class="input-themed border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <option value="">Select a log file...</option>
             </select>
             <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
@@ -24,12 +24,12 @@
     <div class="mb-4 flex items-center">
         <label class="flex items-center">
             <input type="checkbox" id="autoRefresh"
-                class="rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-2">
-            <span class="text-sm text-gray-600">Auto-refresh every 5 seconds</span>
+                class="rounded border-gray-500 text-blue-500 focus:ring-blue-500 mr-2 bg-tertiary">
+            <span class="text-sm text-sub">Auto-refresh every 5 seconds</span>
         </label>
-        <span class="ml-4 text-sm text-gray-500">
+        <span class="ml-4 text-sm text-sub">
             Lines:
-            <select id="linesSelect" class="border rounded px-2 py-1 text-sm">
+            <select id="linesSelect" class="input-themed border rounded px-2 py-1 text-sm">
                 <option value="50">50</option>
                 <option value="100" selected>100</option>
                 <option value="200">200</option>

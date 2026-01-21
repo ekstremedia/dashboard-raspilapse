@@ -5,8 +5,8 @@
 {% block content %}
 <div class="max-w-6xl mx-auto">
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Video Library</h1>
-        <p class="text-gray-600">Browse generated timelapse videos, keograms, and slitscans</p>
+        <h1 class="text-2xl font-bold text-main">Video Library</h1>
+        <p class="text-sub">Browse generated timelapse videos, keograms, and slitscans</p>
     </div>
 
     <!-- Loading state -->
@@ -15,15 +15,15 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <p class="mt-2 text-gray-500">Loading...</p>
+        <p class="mt-2 text-sub">Loading...</p>
     </div>
 
     <!-- Empty state -->
     <div id="emptyState" class="hidden text-center py-12">
-        <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-16 h-16 mx-auto text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
         </svg>
-        <p class="mt-2 text-gray-500">No videos found</p>
+        <p class="mt-2 text-sub">No videos found</p>
         <a href="/timelapse" class="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
             Generate Timelapse
         </a>
@@ -37,8 +37,8 @@
     <!-- Keograms and Slitscans section -->
     <div id="imagesSection" class="hidden mt-8">
         <div class="mb-4">
-            <h2 class="text-xl font-bold text-gray-800">Keograms & Slitscans</h2>
-            <p class="text-gray-600">Generated time-slice images</p>
+            <h2 class="text-xl font-bold text-main">Keograms & Slitscans</h2>
+            <p class="text-sub">Generated time-slice images</p>
         </div>
         <div id="imageList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Filled by JS -->
@@ -84,11 +84,11 @@ function loadVideos() {
             if (data.videos.length > 0) {
                 const list = document.getElementById('videoList');
                 list.innerHTML = data.videos.map(video => `
-                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="card overflow-hidden">
                         <div class="p-4 flex items-center justify-between">
                             <div class="flex-1 min-w-0">
-                                <h3 class="font-semibold text-gray-800 truncate">${video.filename}</h3>
-                                <p class="text-sm text-gray-500">
+                                <h3 class="font-semibold text-main truncate">${video.filename}</h3>
+                                <p class="text-sm text-sub">
                                     ${video.size_mb} MB
                                     <span class="mx-2">|</span>
                                     ${new Date(video.modified).toLocaleString()}
@@ -100,7 +100,7 @@ function loadVideos() {
                                     Play
                                 </button>
                                 <a href="${video.url}" download
-                                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">
+                                    class="btn btn-secondary px-4 py-2 rounded">
                                     Download
                                 </a>
                             </div>
@@ -114,21 +114,21 @@ function loadVideos() {
             if (data.images.length > 0) {
                 const imageList = document.getElementById('imageList');
                 imageList.innerHTML = data.images.map(img => `
-                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="card overflow-hidden">
                         <div class="cursor-pointer" onclick="viewImage('${img.url}')">
                             <img src="${img.url}" alt="${img.filename}"
                                 class="w-full h-40 object-cover hover:opacity-90 transition-opacity">
                         </div>
                         <div class="p-3">
-                            <span class="inline-block px-2 py-1 text-xs font-semibold rounded ${img.type === 'keogram' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
+                            <span class="inline-block px-2 py-1 text-xs font-semibold rounded ${img.type === 'keogram' ? 'badge-purple' : 'badge-green'}">
                                 ${img.type}
                             </span>
-                            <h3 class="font-medium text-gray-800 text-sm mt-2 truncate" title="${img.filename}">${img.filename}</h3>
-                            <p class="text-xs text-gray-500 mt-1">
+                            <h3 class="font-medium text-main text-sm mt-2 truncate" title="${img.filename}">${img.filename}</h3>
+                            <p class="text-xs text-sub mt-1">
                                 ${Math.round(img.size_kb)} KB | ${new Date(img.modified).toLocaleDateString()}
                             </p>
                             <a href="${img.url}" download
-                                class="mt-2 inline-block text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded transition-colors">
+                                class="mt-2 inline-block text-xs btn btn-secondary px-3 py-1 rounded">
                                 Download
                             </a>
                         </div>

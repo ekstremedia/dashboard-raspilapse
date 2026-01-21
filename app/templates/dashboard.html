@@ -5,7 +5,7 @@
 {% block content %}
 <div class="max-w-6xl mx-auto">
     <!-- Latest image -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="card overflow-hidden">
         <div class="relative bg-black">
             <img
                 id="statusImage"
@@ -15,35 +15,35 @@
                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1920 1080%22><rect fill=%22%23374151%22 width=%221920%22 height=%221080%22/><text x=%22960%22 y=%22540%22 fill=%22%239CA3AF%22 text-anchor=%22middle%22 font-size=%2248%22>No image available</text></svg>'"
             >
         </div>
-        <div class="p-4 bg-gray-50 border-t flex justify-between items-center">
+        <div class="p-4 bg-tertiary border-t border-main flex justify-between items-center">
             <div>
-                <h2 class="font-semibold text-gray-800">Latest Capture</h2>
-                <p class="text-sm text-gray-500" id="lastCapture">Loading...</p>
+                <h2 class="font-semibold text-main">Latest Capture</h2>
+                <p class="text-sm text-sub" id="lastCapture">Loading...</p>
             </div>
             <div class="flex items-center space-x-2">
-                <span class="text-sm text-gray-500">Auto-refresh:</span>
-                <span id="countdown" class="text-sm font-mono bg-gray-200 px-2 py-1 rounded">30s</span>
+                <span class="text-sm text-sub">Auto-refresh:</span>
+                <span id="countdown" class="text-sm font-mono bg-tertiary px-2 py-1 rounded text-main">30s</span>
             </div>
         </div>
     </div>
 
     <!-- Stats cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-        <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-sm text-gray-500">CPU Temp</div>
-            <div class="text-2xl font-bold text-gray-800" id="cpuTemp">--</div>
+        <div class="card p-4">
+            <div class="text-sm text-sub">CPU Temp</div>
+            <div class="text-2xl font-bold text-main" id="cpuTemp">--</div>
         </div>
-        <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-sm text-gray-500">Disk Usage</div>
-            <div class="text-2xl font-bold text-gray-800" id="diskUsage">--</div>
+        <div class="card p-4">
+            <div class="text-sm text-sub">Disk Usage</div>
+            <div class="text-2xl font-bold text-main" id="diskUsage">--</div>
         </div>
-        <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-sm text-gray-500">Memory</div>
-            <div class="text-2xl font-bold text-gray-800" id="memoryUsage">--</div>
+        <div class="card p-4">
+            <div class="text-sm text-sub">Memory</div>
+            <div class="text-2xl font-bold text-main" id="memoryUsage">--</div>
         </div>
-        <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-sm text-gray-500">Images Today</div>
-            <div class="text-2xl font-bold text-gray-800" id="imagesToday">--</div>
+        <div class="card p-4">
+            <div class="text-sm text-sub">Images Today</div>
+            <div class="text-2xl font-bold text-main" id="imagesToday">--</div>
         </div>
     </div>
 
@@ -67,7 +67,7 @@
             </svg>
             View Videos
         </a>
-        <a href="/config" class="bg-gray-500 hover:bg-gray-600 text-white rounded-lg p-4 text-center transition-colors">
+        <a href="/config" class="btn btn-secondary rounded-lg p-4 text-center">
             <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
