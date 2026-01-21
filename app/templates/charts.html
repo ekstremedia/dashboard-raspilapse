@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Charts - Raspilapse{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 280px;
+        width: 100%;
+    }
+    .preset-btn {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        background-color: var(--bg-tertiary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: all 150ms;
+    }
+    .preset-btn:hover {
+        background-color: var(--bg-hover);
+        color: var(--text-primary);
+    }
+    .preset-btn.active {
+        background-color: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+    }
+    .metric-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+    }
+    .metric-checkbox input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        accent-color: var(--accent-primary);
+    }
+    .chart-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--text-secondary);
+    }
+    .control-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .control-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 220px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-main">Interactive Charts</h1>
+        <p class="text-sub">Real-time data visualization from the timelapse database</p>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="card p-4 mb-6">
+        <div class="control-panel">
+            <!-- Time Range Presets -->
+            <div class="control-group">
+                <span class="control-label">Time Range</span>
+                <div class="flex flex-wrap gap-2">
+                    <button class="preset-btn" data-range="1h">1h</button>
+                    <button class="preset-btn" data-range="6h">6h</button>
+                    <button class="preset-btn" data-range="12h">12h</button>
+                    <button class="preset-btn active" data-range="24h">24h</button>
+                    <button class="preset-btn" data-range="7d">7d</button>
+                    <button class="preset-btn" data-range="30d">30d</button>
+                </div>
+            </div>
+
+            <!-- Custom Range -->
+            <div class="control-group">
+                <span class="control-label">Custom Range</span>
+                <div class="flex gap-2 items-center flex-wrap">
+                    <input type="datetime-local" id="startDate" class="input-themed text-sm rounded px-2 py-1">
+                    <span class="text-sub">to</span>
+                    <input type="datetime-local" id="endDate" class="input-themed text-sm rounded px-2 py-1">
+                    <button id="applyRange" class="preset-btn">Apply</button>
+                </div>
+            </div>
+
+            <!-- Auto Refresh -->
+            <div class="control-group">
+                <span class="control-label">Auto Refresh</span>
+                <label class="metric-checkbox">
+                    <input type="checkbox" id="autoRefresh">
+                    <span class="text-sub text-sm">Every 60s</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Data Info -->
+        <div class="mt-3 pt-3 border-t border-main">
+            <span class="text-xs text-muted" id="dataInfo">
+                {% if data_range.count > 0 %}
+                Data range: {{ data_range.earliest }} to {{ data_range.latest }} ({{ data_range.count }} records)
+                {% else %}
+                No data available
+                {% endif %}
+            </span>
+            <span class="text-xs text-muted ml-4" id="pointInfo"></span>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Light Levels Chart -->
+        <div class="card overflow-hidden">
+            <div class="p-3 bg-tertiary border-b border-main flex justify-between items-center">
+                <h3 class="font-semibold text-main">Light Levels</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-sub">Lux (log scale)</span>
+                    <button onclick="exportChartAsPNG('light', 'light_levels.png')" class="text-xs text-sub hover:text-main" title="Export PNG">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="chart-container">
+                    <canvas id="lightChart"></canvas>
+                    <div class="chart-loading" id="lightLoading">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brightness Chart -->
+        <div class="card overflow-hidden">
+            <div class="p-3 bg-tertiary border-b border-main flex justify-between items-center">
+                <h3 class="font-semibold text-main">Brightness</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-sub">Mean with P5-P95 band</span>
+                    <button onclick="exportChartAsPNG('brightness', 'brightness.png')" class="text-xs text-sub hover:text-main" title="Export PNG">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="chart-container">
+                    <canvas id="brightnessChart"></canvas>
+                    <div class="chart-loading" id="brightnessLoading">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exposure Chart -->
+        <div class="card overflow-hidden">
+            <div class="p-3 bg-tertiary border-b border-main flex justify-between items-center">
+                <h3 class="font-semibold text-main">Exposure & Gain</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-sub">Dual axis</span>
+                    <button onclick="exportChartAsPNG('exposure', 'exposure_gain.png')" class="text-xs text-sub hover:text-main" title="Export PNG">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="chart-container">
+                    <canvas id="exposureChart"></canvas>
+                    <div class="chart-loading" id="exposureLoading">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Chart -->
+        <div class="card overflow-hidden">
+            <div class="p-3 bg-tertiary border-b border-main flex justify-between items-center">
+                <h3 class="font-semibold text-main">Weather</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-sub">Temperature, humidity, wind</span>
+                    <button onclick="exportChartAsPNG('weather', 'weather.png')" class="text-xs text-sub hover:text-main" title="Export PNG">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="chart-container">
+                    <canvas id="weatherChart"></canvas>
+                    <div class="chart-loading" id="weatherLoading">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Chart -->
+        <div class="card overflow-hidden lg:col-span-2">
+            <div class="p-3 bg-tertiary border-b border-main flex justify-between items-center">
+                <h3 class="font-semibold text-main">System Metrics</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-sub">CPU temp & load</span>
+                    <button onclick="exportChartAsPNG('system', 'system_metrics.png')" class="text-xs text-sub hover:text-main" title="Export PNG">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="chart-container">
+                    <canvas id="systemChart"></canvas>
+                    <div class="chart-loading" id="systemLoading">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    // Initialize charts when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
+</script>
+{% endblock %}
