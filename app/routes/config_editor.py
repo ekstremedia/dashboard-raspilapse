@@ -5,6 +5,7 @@ from app.services.config_service import (
     validate_yaml,
     get_backups,
     restore_backup,
+    backup_config,
 )
 
 bp = Blueprint("config", __name__)
@@ -75,3 +76,14 @@ def api_restore():
         return jsonify({"error": error}), 400
 
     return jsonify({"success": True, "message": "Backup restored"})
+
+
+@bp.route("/api/backup", methods=["POST"])
+def api_backup():
+    """Create a manual backup"""
+    config_path = current_app.config["RASPILAPSE_CONFIG"]
+    try:
+        backup_path = backup_config(config_path)
+        return jsonify({"success": True, "backup": backup_path})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

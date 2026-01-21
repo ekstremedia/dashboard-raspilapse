@@ -39,8 +39,15 @@ def validate_yaml(content):
         camera = config["camera"]
         if "resolution" in camera:
             res = camera["resolution"]
-            if not isinstance(res, list) or len(res) != 2:
-                errors.append("camera.resolution must be a list of [width, height]")
+            # Accept both list format [width, height] and dict format {width: x, height: y}
+            if isinstance(res, dict):
+                if "width" not in res or "height" not in res:
+                    errors.append("camera.resolution must have 'width' and 'height' keys")
+            elif isinstance(res, list):
+                if len(res) != 2:
+                    errors.append("camera.resolution list must have [width, height]")
+            else:
+                errors.append("camera.resolution must be a list [width, height] or dict {width, height}")
 
     # Validate output settings
     if "output" in config:

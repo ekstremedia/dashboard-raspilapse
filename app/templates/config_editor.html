@@ -24,6 +24,9 @@
             <button id="backupsBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">
                 Backups
             </button>
+            <button id="createBackupBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
+                Create Backup
+            </button>
             <button id="validateBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition-colors">
                 Validate
             </button>
@@ -239,10 +242,30 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+function createBackup() {
+    document.getElementById('createBackupBtn').disabled = true;
+
+    fetch('/config/api/backup', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showMessage('Backup failed: ' + data.error, 'error');
+            } else {
+                showMessage('Backup created successfully!', 'success');
+            }
+            document.getElementById('createBackupBtn').disabled = false;
+        })
+        .catch(err => {
+            showMessage('Backup failed: ' + err, 'error');
+            document.getElementById('createBackupBtn').disabled = false;
+        });
+}
+
 // Button handlers
 document.getElementById('validateBtn').addEventListener('click', validateConfig);
 document.getElementById('saveBtn').addEventListener('click', saveConfig);
 document.getElementById('backupsBtn').addEventListener('click', loadBackups);
+document.getElementById('createBackupBtn').addEventListener('click', createBackup);
 
 // Initial load
 loadConfig();

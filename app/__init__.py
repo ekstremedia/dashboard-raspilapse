@@ -1,4 +1,5 @@
 from flask import Flask
+import yaml
 
 
 def create_app(config_name="production"):
@@ -9,6 +10,18 @@ def create_app(config_name="production"):
         app.config.from_object("app.config.DevelopmentConfig")
     else:
         app.config.from_object("app.config.ProductionConfig")
+
+    # Context processor to make camera name available to all templates
+    @app.context_processor
+    def inject_camera_name():
+        camera_name = "Raspilapse"
+        try:
+            with open(app.config["RASPILAPSE_CONFIG"], "r") as f:
+                config = yaml.safe_load(f)
+                camera_name = config.get("overlay", {}).get("camera_name", camera_name)
+        except Exception:
+            pass
+        return {"camera_name": camera_name}
 
     # Register blueprints
     from app.routes.dashboard import bp as dashboard_bp

@@ -324,8 +324,27 @@ document.getElementById('cancelBtn').addEventListener('click', function() {
 document.getElementById('timelapseForm').addEventListener('input', updateCommandPreview);
 document.getElementById('timelapseForm').addEventListener('change', updateCommandPreview);
 
+// Set end time to current time
+function setEndTimeToNow() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.querySelector('[name=end_time]').value = `${hours}:${minutes}`;
+}
+
 // Initial setup
+setEndTimeToNow();
 updateCommandPreview();
-pollStatus(); // Check if there's already a running job
+
+// Check if there's already a running job and start polling if so
+fetch('/timelapse/api/status')
+    .then(r => r.json())
+    .then(status => {
+        showJobStatus(status);
+        if (status.status === 'running') {
+            startPolling();
+        }
+    })
+    .catch(err => console.error('Error checking initial status:', err));
 </script>
 {% endblock %}
