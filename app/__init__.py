@@ -29,6 +29,7 @@ def create_app(config_name="production"):
     from app.routes.timelapse import bp as timelapse_bp
     from app.routes.gallery import bp as gallery_bp
     from app.routes.videos import bp as videos_bp
+    from app.routes.uploads import bp as uploads_bp
     from app.routes.system import bp as system_bp
     from app.routes.logs import bp as logs_bp
     from app.routes.graphs import bp as graphs_bp
@@ -39,6 +40,7 @@ def create_app(config_name="production"):
     app.register_blueprint(timelapse_bp, url_prefix="/timelapse")
     app.register_blueprint(gallery_bp, url_prefix="/gallery")
     app.register_blueprint(videos_bp, url_prefix="/videos")
+    app.register_blueprint(uploads_bp, url_prefix="/uploads")
     app.register_blueprint(system_bp, url_prefix="/system")
     app.register_blueprint(logs_bp, url_prefix="/logs")
     app.register_blueprint(graphs_bp, url_prefix="/graphs")

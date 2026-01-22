@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Queue - Raspilapse{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-main">Upload Queue</h1>
+        <p class="text-sub">Monitor and manage video uploads to the server</p>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4">
+            <div class="text-sm text-sub">Pending</div>
+            <div id="statPending" class="text-2xl font-bold text-yellow-500">-</div>
+        </div>
+        <div class="card p-4">
+            <div class="text-sm text-sub">Uploading</div>
+            <div id="statUploading" class="text-2xl font-bold text-blue-500">-</div>
+        </div>
+        <div class="card p-4">
+            <div class="text-sm text-sub">Success</div>
+            <div id="statSuccess" class="text-2xl font-bold text-green-500">-</div>
+        </div>
+        <div class="card p-4">
+            <div class="text-sm text-sub">Failed</div>
+            <div id="statFailed" class="text-2xl font-bold text-red-500">-</div>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="mb-6 flex flex-wrap gap-2">
+        <button onclick="retryAll()" id="retryAllBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors disabled:opacity-50">
+            Retry All Pending
+        </button>
+        <button onclick="showManualUpload()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
+            Manual Upload
+        </button>
+        <button onclick="refreshStatus()" class="btn btn-secondary px-4 py-2 rounded">
+            Refresh
+        </button>
+        <span id="autoRefreshStatus" class="text-sm text-sub self-center ml-4">Auto-refresh: 10s</span>
+    </div>
+
+    <!-- Manual Upload Form -->
+    <div id="manualUploadForm" class="hidden card p-4 mb-6">
+        <h3 class="font-semibold text-main mb-4">Queue Manual Upload</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm text-sub mb-1">Video Date (YYYY-MM-DD)</label>
+                <input type="date" id="uploadDate" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-main focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-sub mb-1">Video Path</label>
+                <input type="text" id="uploadVideoPath" placeholder="/var/www/html/videos/2026/01/..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-main focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-sub mb-1">Keogram Path (optional)</label>
+                <input type="text" id="uploadKeogramPath" placeholder="/var/www/html/videos/2026/01/keogram_..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-main focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-sub mb-1">Slitscan Path (optional)</label>
+                <input type="text" id="uploadSlitscanPath" placeholder="/var/www/html/videos/2026/01/slitscan_..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-main focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button onclick="queueManualUpload()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
+                Queue & Upload Now
+            </button>
+            <button onclick="hideManualUpload()" class="btn btn-secondary px-4 py-2 rounded">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loadingState" class="text-center py-12">
+        <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-2 text-sub">Loading...</p>
+    </div>
+
+    <!-- Pending uploads section -->
+    <div id="pendingSection" class="hidden mb-8">
+        <h2 class="text-xl font-bold text-main mb-4">Pending Uploads</h2>
+        <div id="pendingList" class="space-y-3">
+            <!-- Filled by JS -->
+        </div>
+    </div>
+
+    <!-- Upload history section -->
+    <div id="historySection" class="hidden">
+        <h2 class="text-xl font-bold text-main mb-4">Upload History</h2>
+        <div id="historyList" class="space-y-3">
+            <!-- Filled by JS -->
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="hidden text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        <p class="mt-2 text-sub">No uploads in queue</p>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="hidden fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg text-white transition-all z-50"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let autoRefreshInterval = null;
+
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg text-white transition-all z-50';
+    if (type === 'success') toast.classList.add('bg-green-500');
+    else if (type === 'error') toast.classList.add('bg-red-500');
+    else toast.classList.add('bg-blue-500');
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+        return new Date(dateStr).toLocaleString();
+    } catch {
+        return dateStr;
+    }
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'pending': 'bg-yellow-500/20 text-yellow-400',
+        'uploading': 'bg-blue-500/20 text-blue-400',
+        'success': 'bg-green-500/20 text-green-400',
+        'failed': 'bg-red-500/20 text-red-400'
+    };
+    return `<span class="px-2 py-1 text-xs font-semibold rounded ${badges[status] || 'bg-gray-500/20 text-gray-400'}">${status}</span>`;
+}
+
+function refreshStatus() {
+    fetch('/uploads/api/status')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('loadingState').classList.add('hidden');
+
+            // Update stats
+            document.getElementById('statPending').textContent = data.stats.pending || 0;
+            document.getElementById('statUploading').textContent = data.stats.uploading || 0;
+            document.getElementById('statSuccess').textContent = data.stats.success || 0;
+            document.getElementById('statFailed').textContent = data.stats.failed || 0;
+
+            // Update retry all button state
+            document.getElementById('retryAllBtn').disabled = (data.stats.pending || 0) === 0;
+
+            // Show empty state if no uploads
+            if (data.history.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('pendingSection').classList.add('hidden');
+                document.getElementById('historySection').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('emptyState').classList.add('hidden');
+
+            // Render pending uploads
+            if (data.pending.length > 0) {
+                const pendingList = document.getElementById('pendingList');
+                pendingList.innerHTML = data.pending.map(upload => `
+                    <div class="card p-4">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    ${getStatusBadge(upload.status)}
+                                    <span class="font-semibold text-main">${upload.video_date}</span>
+                                </div>
+                                <p class="text-sm text-sub truncate" title="${upload.video_path}">${upload.video_path}</p>
+                                <p class="text-xs text-sub mt-1">
+                                    Retries: ${upload.retry_count}/${upload.max_retries}
+                                    ${upload.next_retry_at ? ` | Next retry: ${formatDate(upload.next_retry_at)}` : ''}
+                                </p>
+                                ${upload.last_error ? `<p class="text-xs text-red-400 mt-1 truncate" title="${upload.last_error}">Error: ${upload.last_error}</p>` : ''}
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="retryUpload(${upload.id})"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    Retry Now
+                                </button>
+                                <button onclick="cancelUpload(${upload.id})"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('pendingSection').classList.remove('hidden');
+            } else {
+                document.getElementById('pendingSection').classList.add('hidden');
+            }
+
+            // Render history (excluding pending/failed which are shown above)
+            const completedUploads = data.history.filter(u => u.status === 'success');
+            if (completedUploads.length > 0) {
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = completedUploads.map(upload => `
+                    <div class="card p-4">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    ${getStatusBadge(upload.status)}
+                                    <span class="font-semibold text-main">${upload.video_date}</span>
+                                </div>
+                                <p class="text-sm text-sub truncate" title="${upload.video_path}">${upload.video_path}</p>
+                                <p class="text-xs text-sub mt-1">
+                                    Completed: ${formatDate(upload.completed_at)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('historySection').classList.remove('hidden');
+            } else {
+                document.getElementById('historySection').classList.add('hidden');
+            }
+        })
+        .catch(err => {
+            console.error('Failed to load status:', err);
+            showToast('Failed to load upload status', 'error');
+        });
+}
+
+function retryUpload(id) {
+    showToast('Retrying upload...', 'info');
+    fetch(`/uploads/api/retry/${id}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Upload successful!', 'success');
+            } else {
+                showToast(`Retry failed: ${data.message}`, 'error');
+            }
+            refreshStatus();
+        })
+        .catch(err => {
+            showToast('Request failed', 'error');
+            console.error(err);
+        });
+}
+
+function retryAll() {
+    if (!confirm('Retry all pending uploads now?')) return;
+
+    showToast('Retrying all uploads...', 'info');
+    document.getElementById('retryAllBtn').disabled = true;
+
+    fetch('/uploads/api/retry-all', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            const results = data.results || {};
+            if (data.success) {
+                showToast(`All uploads successful! (${results.success || 0} uploaded)`, 'success');
+            } else {
+                showToast(`Completed: ${results.success || 0} success, ${results.failed || 0} failed`, 'error');
+            }
+            refreshStatus();
+        })
+        .catch(err => {
+            showToast('Request failed', 'error');
+            console.error(err);
+            refreshStatus();
+        });
+}
+
+function cancelUpload(id) {
+    if (!confirm('Remove this upload from the queue?')) return;
+
+    fetch(`/uploads/api/cancel/${id}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Upload cancelled', 'success');
+            } else {
+                showToast('Failed to cancel upload', 'error');
+            }
+            refreshStatus();
+        })
+        .catch(err => {
+            showToast('Request failed', 'error');
+            console.error(err);
+        });
+}
+
+// Initial load
+refreshStatus();
+
+// Auto-refresh every 10 seconds
+autoRefreshInterval = setInterval(refreshStatus, 10000);
+
+// Stop auto-refresh when page is hidden
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    } else {
+        refreshStatus();
+        autoRefreshInterval = setInterval(refreshStatus, 10000);
+    }
+});
+</script>
+{% endblock %}
