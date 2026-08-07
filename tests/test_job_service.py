@@ -29,7 +29,7 @@ def test_can_start_job_ffmpeg_running():
 
         def side_effect(cmd, *args, **kwargs):
             result = MagicMock()
-            if "make_timelapse" in str(cmd):
+            if "raspilapse.cli.timelapse" in str(cmd):
                 result.returncode = 1
                 result.stdout = b""
             else:  # ffmpeg check
@@ -45,12 +45,12 @@ def test_can_start_job_ffmpeg_running():
 
 
 def test_can_start_job_timelapse_running():
-    """Test can_start_job when make_timelapse.py is running."""
+    """Test can_start_job when a timelapse build is running."""
     with patch("subprocess.run") as mock_run:
 
         def side_effect(cmd, *args, **kwargs):
             result = MagicMock()
-            if "make_timelapse" in str(cmd):
+            if "raspilapse.cli.timelapse" in str(cmd):
                 result.returncode = 0
                 result.stdout = b"12345"
             else:
@@ -62,7 +62,7 @@ def test_can_start_job_timelapse_running():
 
         can_start, reason = can_start_job()
         assert can_start is False
-        assert "make_timelapse" in reason.lower()
+        assert "timelapse" in reason.lower()
 
 
 def test_get_job_status_idle():

@@ -6,13 +6,18 @@ from datetime import datetime
 from pathlib import Path
 
 
+# raspilapse 1.5.0 moved src/make_timelapse.py into the raspilapse package.
+# The process now shows up as `python3 -m raspilapse.cli.timelapse`.
+TIMELAPSE_MODULE = "raspilapse.cli.timelapse"
+
+
 def can_start_job():
     """Check if we can start a new timelapse job"""
-    # Check for running make_timelapse.py
-    result = subprocess.run(["pgrep", "-f", "make_timelapse.py"], capture_output=True)
+    # Check for a running timelapse build
+    result = subprocess.run(["pgrep", "-f", TIMELAPSE_MODULE], capture_output=True)
     if result.returncode == 0:
         pids = result.stdout.decode().strip()
-        return False, f"make_timelapse.py already running (PID: {pids})"
+        return False, f"timelapse build already running (PID: {pids})"
 
     # Check for ANY running ffmpeg process
     result = subprocess.run(["pgrep", "-f", "ffmpeg"], capture_output=True)
@@ -26,9 +31,12 @@ def can_start_job():
 def start_timelapse_job(raspilapse_root, args, job_status_file):
     """Start a timelapse generation job"""
     # Build command
+    # Run as a module: cwd is raspilapse_root (set on Popen below), which puts
+    # the raspilapse package on sys.path without needing a pip install.
     cmd = [
         "/usr/bin/python3",
-        os.path.join(raspilapse_root, "src", "make_timelapse.py"),
+        "-m",
+        TIMELAPSE_MODULE,
     ] + args
 
     # Create log file for output
@@ -87,7 +95,7 @@ def is_process_running(pid):
 def get_job_status(job_status_file):
     """Get current job status"""
     if not Path(job_status_file).exists():
-        # Also check if ffmpeg or make_timelapse is running without status file
+        # Also check if ffmpeg or a timelapse build is running without status file
         can_run, reason = can_start_job()
         if not can_run:
             return {"status": "running", "message": reason, "external": True}
@@ -111,9 +119,9 @@ def get_job_status(job_status_file):
     # Check if process still running
     pid = status.get("pid")
     if pid:
-        # Check both the original process AND if ffmpeg/make_timelapse is still running
+        # Check both the original process AND if ffmpeg/timelapse build is still running
         process_alive = is_process_running(pid)
-        can_run, _ = can_start_job()  # This checks for ffmpeg and make_timelapse
+        can_run, _ = can_start_job()  # This checks for ffmpeg and the timelapse build
 
         if process_alive or not can_run:
             # Still running - read recent log output
@@ -187,8 +195,8 @@ def extract_output_files(log_file):
 
 def cancel_job(job_status_file):
     """Cancel running timelapse job"""
-    # First try to kill make_timelapse.py
-    result = subprocess.run(["pkill", "-f", "make_timelapse.py"], capture_output=True)
+    # First try to kill the timelapse build
+    result = subprocess.run(["pkill", "-f", TIMELAPSE_MODULE], capture_output=True)
     killed_timelapse = result.returncode == 0
 
     # Then kill ffmpeg (child process)

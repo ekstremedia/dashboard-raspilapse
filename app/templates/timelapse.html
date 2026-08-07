@@ -142,7 +142,7 @@
     <div class="mt-6 bg-gray-800 rounded-lg p-4">
         <h3 class="text-sm font-medium text-gray-400 mb-2">Command Preview</h3>
         <code id="commandPreview" class="text-green-400 text-sm font-mono break-all">
-            python src/make_timelapse.py --start 07:00 --end 16:00 --today --hd --hw --no-keogram
+            python3 -m raspilapse.cli.timelapse --start 07:00 --end 16:00 --today --hd --hw --no-keogram
         </code>
     </div>
 </div>
@@ -160,7 +160,7 @@ function updateCommandPreview() {
     const form = document.getElementById('timelapseForm');
     const formData = new FormData(form);
 
-    let cmd = 'python src/make_timelapse.py';
+    let cmd = 'python3 -m raspilapse.cli.timelapse';
 
     if (formData.get('start_time')) cmd += ` --start ${formData.get('start_time')}`;
     if (formData.get('end_time')) cmd += ` --end ${formData.get('end_time')}`;

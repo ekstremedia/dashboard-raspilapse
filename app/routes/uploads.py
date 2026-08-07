@@ -11,9 +11,11 @@ from pathlib import Path
 import yaml
 from flask import Blueprint, current_app, jsonify, render_template, request
 
-# Add raspilapse to path for UploadService
+# Add raspilapse to path for UploadService.
+# 1.5.0 moved src/upload_service.py to raspilapse/storage/upload.py; the class
+# and every method used below are unchanged.
 sys.path.insert(0, "/home/pi/raspilapse")
-from src.upload_service import UploadService
+from raspilapse.storage.upload import UploadService
 
 bp = Blueprint("uploads", __name__)
 
